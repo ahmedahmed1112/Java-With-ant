@@ -1,0 +1,1267 @@
+import javax.swing.*;
+import javax.swing.table.*;
+import java.awt.*;
+import java.awt.event.*;
+import java.io.*;
+import java.util.*;
+import java.text.SimpleDateFormat;
+
+// ==================== BASE USER CLASS ====================
+abstract class User {
+    private String username;
+    private String password;
+    private String role;
+    private String email;
+    private String fullName;
+    private String status;
+    
+    public User(String username, String password, String role, String email, String fullName) {
+        this.username = username;
+        this.password = password;
+        this.role = role;
+        this.email = email;
+        this.fullName = fullName;
+        this.status = "Active";
+    }
+    
+    // Getters and Setters
+    public String getUsername() { return username; }
+    public String getPassword() { return password; }
+    public String getRole() { return role; }
+    public String getEmail() { return email; }
+    public String getFullName() { return fullName; }
+    public String getStatus() { return status; }
+    
+    public void setPassword(String password) { this.password = password; }
+    public void setEmail(String email) { this.email = email; }
+    public void setFullName(String fullName) { this.fullName = fullName; }
+    public void setStatus(String status) { this.status = status; }
+}
+
+// ==================== ADMIN CLASS ====================
+class Admin extends User {
+    public Admin(String username, String password, String email, String fullName) {
+        super(username, password, "admin", email, fullName);
+    }
+}
+
+// ==================== FILE HANDLER ====================
+class FileHandler {
+    private static final String USERS_FILE = "users.txt";
+    private static final String MODULES_FILE = "modules.txt";
+    private static final String CLASSES_FILE = "classes.txt";
+    private static final String GRADING_FILE = "grading.txt";
+    private static final String ASSIGNMENTS_FILE = "assignments.txt";
+    
+    // Save user
+    public static boolean saveUser(User user) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(USERS_FILE, true))) {
+            writer.write(user.getUsername() + "|" + user.getPassword() + "|" + 
+                         user.getRole() + "|" + user.getEmail() + "|" + 
+                         user.getFullName() + "|" + user.getStatus());
+            writer.newLine();
+            return true;
+        } catch (IOException e) {
+            return false;
+        }
+    }
+    
+    // Read all users
+    public static ArrayList<User> readUsers() {
+        ArrayList<User> users = new ArrayList<>();
+        File file = new File(USERS_FILE);
+        
+        if (!file.exists()) {
+            // Create default admin if file doesn't exist
+            Admin defaultAdmin = new Admin("admin", "admin123", "admin@apu.edu.my", "System Administrator");
+            saveUser(defaultAdmin);
+            users.add(defaultAdmin);
+            return users;
+        }
+        
+        try (BufferedReader reader = new BufferedReader(new FileReader(USERS_FILE))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] data = line.split("\\|");
+                if (data.length >= 6) {
+                    String role = data[2];
+                    if (role.equals("admin")) {
+                        User admin = new Admin(data[0], data[1], data[3], data[4]);
+                        admin.setStatus(data[5]);
+                        users.add(admin);
+                    } else if (role.equals("academic")) {
+                        // Create other user types if needed in admin view
+                        User academic = new Admin(data[0], data[1], data[3], data[4]);
+                        academic.setStatus(data[5]);
+                        users.add(academic);
+                    }
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return users;
+    }
+    
+    // Check if username exists
+    public static boolean usernameExists(String username) {
+        ArrayList<User> users = readUsers();
+        for (User user : users) {
+            if (user.getUsername().equals(username)) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    // Update user in file
+    public static boolean updateUser(User updatedUser) {
+        ArrayList<User> users = readUsers();
+        ArrayList<String> lines = new ArrayList<>();
+        
+        for (User user : users) {
+            if (user.getUsername().equals(updatedUser.getUsername())) {
+                lines.add(updatedUser.getUsername() + "|" + updatedUser.getPassword() + "|" + 
+                         updatedUser.getRole() + "|" + updatedUser.getEmail() + "|" + 
+                         updatedUser.getFullName() + "|" + updatedUser.getStatus());
+            } else {
+                lines.add(user.getUsername() + "|" + user.getPassword() + "|" + 
+                         user.getRole() + "|" + user.getEmail() + "|" + 
+                         user.getFullName() + "|" + user.getStatus());
+            }
+        }
+        
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(USERS_FILE))) {
+            for (String line : lines) {
+                writer.write(line);
+                writer.newLine();
+            }
+            return true;
+        } catch (IOException e) {
+            return false;
+        }
+    }
+    
+    // Delete user from file
+    public static boolean deleteUser(String username) {
+        ArrayList<User> users = readUsers();
+        ArrayList<String> lines = new ArrayList<>();
+        
+        for (User user : users) {
+            if (!user.getUsername().equals(username)) {
+                lines.add(user.getUsername() + "|" + user.getPassword() + "|" + 
+                         user.getRole() + "|" + user.getEmail() + "|" + 
+                         user.getFullName() + "|" + user.getStatus());
+            }
+        }
+        
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(USERS_FILE))) {
+            for (String line : lines) {
+                writer.write(line);
+                writer.newLine();
+            }
+            return true;
+        } catch (IOException e) {
+            return false;
+        }
+    }
+    
+    // Save grading system
+    public static boolean saveGrading(String grade, int minMark, int maxMark) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(GRADING_FILE, true))) {
+            writer.write(grade + "|" + minMark + "|" + maxMark);
+            writer.newLine();
+            return true;
+        } catch (IOException e) {
+            return false;
+        }
+    }
+    
+    // Read all grading systems
+    public static ArrayList<String[]> readGrading() {
+        ArrayList<String[]> grades = new ArrayList<>();
+        File file = new File(GRADING_FILE);
+        
+        if (!file.exists()) return grades;
+        
+        try (BufferedReader reader = new BufferedReader(new FileReader(GRADING_FILE))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] data = line.split("\\|");
+                if (data.length >= 3) {
+                    grades.add(data);
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return grades;
+    }
+    
+    // Clear grading file
+    public static boolean clearGrading() {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(GRADING_FILE))) {
+            writer.write("");
+            return true;
+        } catch (IOException e) {
+            return false;
+        }
+    }
+    
+    // Save class
+    public static boolean saveClass(String classId, String className, String moduleCode, 
+                                   String lecturer, String schedule, int maxStudents) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(CLASSES_FILE, true))) {
+            writer.write(classId + "|" + className + "|" + moduleCode + "|" + 
+                        lecturer + "|" + schedule + "|" + maxStudents);
+            writer.newLine();
+            return true;
+        } catch (IOException e) {
+            return false;
+        }
+    }
+    
+    // Read all classes
+    public static ArrayList<String[]> readClasses() {
+        ArrayList<String[]> classes = new ArrayList<>();
+        File file = new File(CLASSES_FILE);
+        
+        if (!file.exists()) return classes;
+        
+        try (BufferedReader reader = new BufferedReader(new FileReader(CLASSES_FILE))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] data = line.split("\\|");
+                if (data.length >= 6) {
+                    classes.add(data);
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return classes;
+    }
+    
+    // Save module
+    public static boolean saveModule(String code, String name, int credits, String leader) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(MODULES_FILE, true))) {
+            writer.write(code + "|" + name + "|" + credits + "|" + leader);
+            writer.newLine();
+            return true;
+        } catch (IOException e) {
+            return false;
+        }
+    }
+    
+    // Read all modules
+    public static ArrayList<String[]> readModules() {
+        ArrayList<String[]> modules = new ArrayList<>();
+        File file = new File(MODULES_FILE);
+        
+        if (!file.exists()) return modules;
+        
+        try (BufferedReader reader = new BufferedReader(new FileReader(MODULES_FILE))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] data = line.split("\\|");
+                if (data.length >= 4) {
+                    modules.add(data);
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return modules;
+    }
+    
+    // Save assignment (lecturer to academic leader)
+    public static boolean saveAssignment(String lecturer, String academicLeader) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(ASSIGNMENTS_FILE, true))) {
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            writer.write(lecturer + "|" + academicLeader + "|" + sdf.format(new Date()));
+            writer.newLine();
+            return true;
+        } catch (IOException e) {
+            return false;
+        }
+    }
+    
+    // Read all assignments
+    public static ArrayList<String[]> readAssignments() {
+        ArrayList<String[]> assignments = new ArrayList<>();
+        File file = new File(ASSIGNMENTS_FILE);
+        
+        if (!file.exists()) return assignments;
+        
+        try (BufferedReader reader = new BufferedReader(new FileReader(ASSIGNMENTS_FILE))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] data = line.split("\\|");
+                if (data.length >= 3) {
+                    assignments.add(data);
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return assignments;
+    }
+}
+
+// ==================== VALIDATOR ====================
+class Validator {
+    public static boolean isValidEmail(String email) {
+        return email.matches("^[A-Za-z0-9+_.-]+@(.+)$");
+    }
+    
+    public static boolean isValidNumber(String number) {
+        return number.matches("\\d+");
+    }
+    
+    public static boolean isStrongPassword(String password) {
+        return password.length() >= 6;
+    }
+    
+    public static boolean isPercentage(String number) {
+        try {
+            double value = Double.parseDouble(number);
+            return value >= 0 && value <= 100;
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
+}
+
+// ==================== LOGIN GUI ====================
+class LoginGUI extends JFrame {
+    private JTextField usernameField;
+    private JPasswordField passwordField;
+    
+    public LoginGUI() {
+        setTitle("AFS - Admin Login");
+        setSize(400, 300);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLocationRelativeTo(null);
+        setLayout(new BorderLayout());
+        
+        // Title Panel
+        JPanel titlePanel = new JPanel();
+        titlePanel.setBackground(new Color(30, 80, 120));
+        JLabel titleLabel = new JLabel("Assessment Feedback System", JLabel.CENTER);
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 22));
+        titleLabel.setForeground(Color.WHITE);
+        titlePanel.add(titleLabel);
+        add(titlePanel, BorderLayout.NORTH);
+        
+        // Login Panel
+        JPanel loginPanel = new JPanel(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(10, 10, 10, 10);
+        
+        gbc.gridx = 0; gbc.gridy = 0;
+        loginPanel.add(new JLabel("Username:"), gbc);
+        
+        gbc.gridx = 1;
+        usernameField = new JTextField(20);
+        loginPanel.add(usernameField, gbc);
+        
+        gbc.gridx = 0; gbc.gridy = 1;
+        loginPanel.add(new JLabel("Password:"), gbc);
+        
+        gbc.gridx = 1;
+        passwordField = new JPasswordField(20);
+        loginPanel.add(passwordField, gbc);
+        
+        gbc.gridx = 0; gbc.gridy = 2; gbc.gridwidth = 2;
+        JButton loginButton = new JButton("Login");
+        loginButton.setBackground(new Color(30, 80, 120));
+        loginButton.setForeground(Color.WHITE);
+        loginButton.setFont(new Font("Arial", Font.BOLD, 14));
+        loginButton.setPreferredSize(new Dimension(150, 30));
+        loginPanel.add(loginButton, gbc);
+        
+        gbc.gridy = 3;
+        JLabel demoLabel = new JLabel("Default: admin/admin123", JLabel.CENTER);
+        demoLabel.setForeground(Color.GRAY);
+        loginPanel.add(demoLabel, gbc);
+        
+        add(loginPanel, BorderLayout.CENTER);
+        
+        // Action Listener
+        loginButton.addActionListener(e -> login());
+        passwordField.addActionListener(e -> login());
+        
+        setVisible(true);
+    }
+    
+    private void login() {
+        String username = usernameField.getText().trim();
+        String password = new String(passwordField.getPassword());
+        
+        if (username.isEmpty() || password.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Please enter username and password", 
+                                          "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        
+        ArrayList<User> users = FileHandler.readUsers();
+        for (User user : users) {
+            if (user.getUsername().equals(username) && 
+                user.getPassword().equals(password) && 
+                user.getRole().equals("admin")) {
+                
+                dispose();
+                new AdminDashboard(user);
+                return;
+            }
+        }
+        
+        JOptionPane.showMessageDialog(this, "Invalid admin credentials", 
+                                      "Login Failed", JOptionPane.ERROR_MESSAGE);
+    }
+}
+
+// ==================== ADMIN DASHBOARD ====================
+class AdminDashboard extends JFrame {
+    private User currentUser;
+    private JTabbedPane tabbedPane;
+    
+    // Components for User Management
+    private JTable userTable;
+    private DefaultTableModel userTableModel;
+    private JTextField searchField;
+    
+    // Components for Grading System
+    private JTable gradingTable;
+    private DefaultTableModel gradingTableModel;
+    
+    // Components for Class Management
+    private JTable classTable;
+    private DefaultTableModel classTableModel;
+    
+    // Components for Assignments
+    private JTable assignmentTable;
+    private DefaultTableModel assignmentTableModel;
+    
+    public AdminDashboard(User user) {
+        this.currentUser = user;
+        
+        setTitle("AFS - Admin Dashboard");
+        setSize(1100, 700);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLocationRelativeTo(null);
+        setLayout(new BorderLayout());
+        
+        // Top Panel
+        JPanel topPanel = createTopPanel();
+        add(topPanel, BorderLayout.NORTH);
+        
+        // Main Tabbed Pane
+        tabbedPane = new JTabbedPane();
+        tabbedPane.setFont(new Font("Arial", Font.PLAIN, 14));
+        
+        // Tab 1: User Management
+        tabbedPane.addTab("👥 User Management", createUserManagementPanel());
+        
+        // Tab 2: Grading System
+        tabbedPane.addTab("📊 Grading System", createGradingSystemPanel());
+        
+        // Tab 3: Class Management
+        tabbedPane.addTab("🏫 Class Management", createClassManagementPanel());
+        
+        // Tab 4: Assign Lecturers
+        tabbedPane.addTab("👨‍🏫 Assign Lecturers", createAssignmentPanel());
+        
+        // Tab 5: Module Management
+        tabbedPane.addTab("📚 Module Overview", createModulePanel());
+        
+        add(tabbedPane, BorderLayout.CENTER);
+        
+        // Bottom Panel
+        JPanel bottomPanel = new JPanel();
+        bottomPanel.setBackground(new Color(240, 240, 240));
+        bottomPanel.add(new JLabel("© 2026 APU - Assessment Feedback System | Admin Panel"));
+        add(bottomPanel, BorderLayout.SOUTH);
+        
+        setVisible(true);
+    }
+    
+    private JPanel createTopPanel() {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBackground(new Color(30, 80, 120));
+        panel.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
+        
+        // Left side: Welcome message
+        JLabel welcomeLabel = new JLabel("👨‍💼 Welcome, " + currentUser.getFullName());
+        welcomeLabel.setForeground(Color.WHITE);
+        welcomeLabel.setFont(new Font("Arial", Font.BOLD, 18));
+        panel.add(welcomeLabel, BorderLayout.WEST);
+        
+        // Right side: Logout button
+        JButton logoutButton = new JButton("🚪 Logout");
+        logoutButton.setBackground(new Color(220, 60, 60));
+        logoutButton.setForeground(Color.WHITE);
+        logoutButton.setFont(new Font("Arial", Font.BOLD, 12));
+        logoutButton.setFocusPainted(false);
+        logoutButton.addActionListener(e -> {
+            dispose();
+            new LoginGUI();
+        });
+        panel.add(logoutButton, BorderLayout.EAST);
+        
+        return panel;
+    }
+    
+    private JPanel createUserManagementPanel() {
+        JPanel panel = new JPanel(new BorderLayout());
+        
+        // Search Panel
+        JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        searchPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        
+        searchField = new JTextField(20);
+        JButton searchButton = new JButton("🔍 Search");
+        JButton refreshButton = new JButton("🔄 Refresh");
+        JButton addUserButton = new JButton("➕ Add User");
+        
+        searchButton.setBackground(new Color(30, 80, 120));
+        searchButton.setForeground(Color.WHITE);
+        refreshButton.setBackground(new Color(70, 130, 180));
+        refreshButton.setForeground(Color.WHITE);
+        addUserButton.setBackground(new Color(34, 139, 34));
+        addUserButton.setForeground(Color.WHITE);
+        
+        searchButton.addActionListener(e -> searchUsers());
+        refreshButton.addActionListener(e -> loadUsers());
+        addUserButton.addActionListener(e -> addUserDialog());
+        
+        searchPanel.add(new JLabel("Search:"));
+        searchPanel.add(searchField);
+        searchPanel.add(searchButton);
+        searchPanel.add(refreshButton);
+        searchPanel.add(addUserButton);
+        
+        panel.add(searchPanel, BorderLayout.NORTH);
+        
+        // User Table
+        String[] columns = {"Username", "Full Name", "Role", "Email", "Status"};
+        userTableModel = new DefaultTableModel(columns, 0);
+        
+        userTable = new JTable(userTableModel);
+        userTable.setRowHeight(30);
+        
+        JScrollPane scrollPane = new JScrollPane(userTable);
+        panel.add(scrollPane, BorderLayout.CENTER);
+        
+        // Button Panel for Edit/Delete
+        JPanel buttonPanel = new JPanel();
+        JButton editButton = new JButton("✏️ Edit Selected");
+        JButton deleteButton = new JButton("🗑️ Delete Selected");
+        
+        editButton.setBackground(new Color(255, 193, 7));
+        editButton.setForeground(Color.BLACK);
+        deleteButton.setBackground(new Color(220, 60, 60));
+        deleteButton.setForeground(Color.WHITE);
+        
+        editButton.addActionListener(e -> editSelectedUser());
+        deleteButton.addActionListener(e -> deleteSelectedUser());
+        
+        buttonPanel.add(editButton);
+        buttonPanel.add(deleteButton);
+        
+        panel.add(buttonPanel, BorderLayout.SOUTH);
+        
+        // Load initial data
+        loadUsers();
+        
+        return panel;
+    }
+    
+    private JPanel createGradingSystemPanel() {
+        JPanel panel = new JPanel(new BorderLayout());
+        
+        // Top Panel - Controls
+        JPanel controlPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        controlPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        
+        JButton addGradeButton = new JButton("➕ Add Grade");
+        JButton defaultButton = new JButton("📋 Load APU Default");
+        JButton clearButton = new JButton("🗑️ Clear All");
+        
+        addGradeButton.setBackground(new Color(34, 139, 34));
+        addGradeButton.setForeground(Color.WHITE);
+        defaultButton.setBackground(new Color(30, 80, 120));
+        defaultButton.setForeground(Color.WHITE);
+        clearButton.setBackground(new Color(220, 60, 60));
+        clearButton.setForeground(Color.WHITE);
+        
+        addGradeButton.addActionListener(e -> addGradeDialog());
+        defaultButton.addActionListener(e -> loadDefaultGrades());
+        clearButton.addActionListener(e -> clearGrades());
+        
+        controlPanel.add(addGradeButton);
+        controlPanel.add(defaultButton);
+        controlPanel.add(clearButton);
+        
+        panel.add(controlPanel, BorderLayout.NORTH);
+        
+        // Grading Table
+        String[] columns = {"Grade", "Minimum Mark", "Maximum Mark", "Description"};
+        gradingTableModel = new DefaultTableModel(columns, 0);
+        gradingTable = new JTable(gradingTableModel);
+        gradingTable.setRowHeight(30);
+        
+        // Color rows based on grade
+        gradingTable.setDefaultRenderer(Object.class, new TableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value, 
+                    boolean isSelected, boolean hasFocus, int row, int column) {
+                JLabel label = new JLabel();
+                label.setOpaque(true);
+                
+                if (value != null) {
+                    label.setText(value.toString());
+                }
+                
+                if (isSelected) {
+                    label.setBackground(new Color(30, 80, 120));
+                    label.setForeground(Color.WHITE);
+                } else {
+                    label.setForeground(Color.BLACK);
+                    
+                    // Set background color based on grade
+                    if (row < table.getRowCount()) {
+                        String grade = table.getValueAt(row, 0).toString();
+                        if (grade.equals("A") || grade.equals("A+")) {
+                            label.setBackground(new Color(144, 238, 144)); // Light green
+                        } else if (grade.equals("B") || grade.contains("B")) {
+                            label.setBackground(new Color(173, 216, 230)); // Light blue
+                        } else if (grade.equals("C") || grade.contains("C")) {
+                            label.setBackground(new Color(255, 255, 224)); // Light yellow
+                        } else if (grade.equals("D") || grade.contains("D")) {
+                            label.setBackground(new Color(255, 228, 196)); // Light orange
+                        } else if (grade.equals("F")) {
+                            label.setBackground(new Color(255, 182, 193)); // Light red
+                        } else {
+                            label.setBackground(Color.WHITE);
+                        }
+                    }
+                }
+                return label;
+            }
+        });
+        
+        JScrollPane scrollPane = new JScrollPane(gradingTable);
+        panel.add(scrollPane, BorderLayout.CENTER);
+        
+        // Info Panel
+        JPanel infoPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        infoPanel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
+        infoPanel.add(new JLabel("💡 Define the university grading system used for all assessments"));
+        panel.add(infoPanel, BorderLayout.SOUTH);
+        
+        // Load initial data
+        loadGradingSystem();
+        
+        return panel;
+    }
+    
+    private JPanel createClassManagementPanel() {
+        JPanel panel = new JPanel(new BorderLayout());
+        
+        // Top Panel - Form
+        JPanel formPanel = new JPanel(new GridBagLayout());
+        formPanel.setBorder(BorderFactory.createTitledBorder("Create New Class"));
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        
+        JTextField classIdField = new JTextField(15);
+        JTextField classNameField = new JTextField(15);
+        JTextField moduleCodeField = new JTextField(15);
+        JTextField lecturerField = new JTextField(15);
+        JTextField scheduleField = new JTextField(15);
+        JTextField maxStudentsField = new JTextField(15);
+        
+        gbc.gridx = 0; gbc.gridy = 0;
+        formPanel.add(new JLabel("Class ID:"), gbc);
+        gbc.gridx = 1;
+        formPanel.add(classIdField, gbc);
+        
+        gbc.gridx = 0; gbc.gridy = 1;
+        formPanel.add(new JLabel("Class Name:"), gbc);
+        gbc.gridx = 1;
+        formPanel.add(classNameField, gbc);
+        
+        gbc.gridx = 0; gbc.gridy = 2;
+        formPanel.add(new JLabel("Module Code:"), gbc);
+        gbc.gridx = 1;
+        formPanel.add(moduleCodeField, gbc);
+        
+        gbc.gridx = 0; gbc.gridy = 3;
+        formPanel.add(new JLabel("Lecturer Username:"), gbc);
+        gbc.gridx = 1;
+        formPanel.add(lecturerField, gbc);
+        
+        gbc.gridx = 0; gbc.gridy = 4;
+        formPanel.add(new JLabel("Schedule:"), gbc);
+        gbc.gridx = 1;
+        formPanel.add(scheduleField, gbc);
+        
+        gbc.gridx = 0; gbc.gridy = 5;
+        formPanel.add(new JLabel("Max Students:"), gbc);
+        gbc.gridx = 1;
+        formPanel.add(maxStudentsField, gbc);
+        
+        gbc.gridx = 0; gbc.gridy = 6; gbc.gridwidth = 2;
+        JButton createButton = new JButton("➕ Create Class");
+        createButton.setBackground(new Color(34, 139, 34));
+        createButton.setForeground(Color.WHITE);
+        createButton.addActionListener(e -> {
+            createClass(classIdField.getText(), classNameField.getText(), 
+                       moduleCodeField.getText(), lecturerField.getText(),
+                       scheduleField.getText(), maxStudentsField.getText());
+            
+            // Clear fields
+            classIdField.setText("");
+            classNameField.setText("");
+            moduleCodeField.setText("");
+            lecturerField.setText("");
+            scheduleField.setText("");
+            maxStudentsField.setText("");
+            
+            // Reload table
+            loadClasses();
+        });
+        formPanel.add(createButton, gbc);
+        
+        panel.add(formPanel, BorderLayout.NORTH);
+        
+        // Class Table
+        String[] columns = {"Class ID", "Class Name", "Module Code", "Lecturer", "Schedule", "Max Students"};
+        classTableModel = new DefaultTableModel(columns, 0);
+        classTable = new JTable(classTableModel);
+        classTable.setRowHeight(30);
+        
+        JScrollPane scrollPane = new JScrollPane(classTable);
+        panel.add(scrollPane, BorderLayout.CENTER);
+        
+        // Bottom Panel - Refresh
+        JPanel bottomPanel = new JPanel();
+        JButton refreshButton = new JButton("🔄 Refresh List");
+        refreshButton.addActionListener(e -> loadClasses());
+        bottomPanel.add(refreshButton);
+        panel.add(bottomPanel, BorderLayout.SOUTH);
+        
+        // Load initial data
+        loadClasses();
+        
+        return panel;
+    }
+    
+    private JPanel createAssignmentPanel() {
+        JPanel panel = new JPanel(new BorderLayout());
+        
+        // Top Panel - Form
+        JPanel formPanel = new JPanel(new GridBagLayout());
+        formPanel.setBorder(BorderFactory.createTitledBorder("Assign Lecturer to Academic Leader"));
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(5, 5, 5, 5);
+        
+        JComboBox<String> lecturerCombo = new JComboBox<>();
+        JComboBox<String> leaderCombo = new JComboBox<>();
+        
+        // Load users into comboboxes
+        loadUsersToComboBox(lecturerCombo, "lecturer");
+        loadUsersToComboBox(leaderCombo, "academic");
+        
+        gbc.gridx = 0; gbc.gridy = 0;
+        formPanel.add(new JLabel("Select Lecturer:"), gbc);
+        gbc.gridx = 1;
+        formPanel.add(lecturerCombo, gbc);
+        
+        gbc.gridx = 0; gbc.gridy = 1;
+        formPanel.add(new JLabel("Select Academic Leader:"), gbc);
+        gbc.gridx = 1;
+        formPanel.add(leaderCombo, gbc);
+        
+        gbc.gridx = 0; gbc.gridy = 2; gbc.gridwidth = 2;
+        JButton assignButton = new JButton("✅ Assign");
+        assignButton.setBackground(new Color(30, 80, 120));
+        assignButton.setForeground(Color.WHITE);
+        assignButton.addActionListener(e -> {
+            String lecturer = (String) lecturerCombo.getSelectedItem();
+            String leader = (String) leaderCombo.getSelectedItem();
+            
+            if (lecturer != null && leader != null && !lecturer.isEmpty() && !leader.isEmpty()) {
+                if (FileHandler.saveAssignment(lecturer, leader)) {
+                    JOptionPane.showMessageDialog(this, 
+                        "Successfully assigned " + lecturer + " to " + leader);
+                    loadAssignments();
+                }
+            }
+        });
+        formPanel.add(assignButton, gbc);
+        
+        panel.add(formPanel, BorderLayout.NORTH);
+        
+        // Assignment Table
+        String[] columns = {"Lecturer", "Academic Leader", "Assigned Date"};
+        assignmentTableModel = new DefaultTableModel(columns, 0);
+        assignmentTable = new JTable(assignmentTableModel);
+        assignmentTable.setRowHeight(30);
+        
+        JScrollPane scrollPane = new JScrollPane(assignmentTable);
+        panel.add(scrollPane, BorderLayout.CENTER);
+        
+        // Load initial data
+        loadAssignments();
+        
+        return panel;
+    }
+    
+    private JPanel createModulePanel() {
+        JPanel panel = new JPanel(new BorderLayout());
+        
+        // Module Table
+        String[] columns = {"Module Code", "Module Name", "Credits", "Academic Leader"};
+        DefaultTableModel model = new DefaultTableModel(columns, 0);
+        JTable table = new JTable(model);
+        
+        // Load modules
+        ArrayList<String[]> modules = FileHandler.readModules();
+        for (String[] module : modules) {
+            model.addRow(module);
+        }
+        
+        JScrollPane scrollPane = new JScrollPane(table);
+        panel.add(scrollPane, BorderLayout.CENTER);
+        
+        // Info Panel
+        JPanel infoPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        infoPanel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
+        infoPanel.add(new JLabel("📚 Modules are created by Academic Leaders (View Only for Admin)"));
+        panel.add(infoPanel, BorderLayout.SOUTH);
+        
+        return panel;
+    }
+    
+    // ==================== USER MANAGEMENT METHODS ====================
+    private void loadUsers() {
+        userTableModel.setRowCount(0);
+        ArrayList<User> users = FileHandler.readUsers();
+        
+        for (User user : users) {
+            Object[] row = {
+                user.getUsername(),
+                user.getFullName(),
+                user.getRole(),
+                user.getEmail(),
+                user.getStatus()
+            };
+            userTableModel.addRow(row);
+        }
+    }
+    
+    private void searchUsers() {
+        String searchTerm = searchField.getText().toLowerCase();
+        userTableModel.setRowCount(0);
+        ArrayList<User> users = FileHandler.readUsers();
+        
+        for (User user : users) {
+            if (user.getUsername().toLowerCase().contains(searchTerm) ||
+                user.getFullName().toLowerCase().contains(searchTerm) ||
+                user.getEmail().toLowerCase().contains(searchTerm) ||
+                user.getRole().toLowerCase().contains(searchTerm)) {
+                
+                Object[] row = {
+                    user.getUsername(),
+                    user.getFullName(),
+                    user.getRole(),
+                    user.getEmail(),
+                    user.getStatus()
+                };
+                userTableModel.addRow(row);
+            }
+        }
+    }
+    
+    private void addUserDialog() {
+        JDialog dialog = new JDialog(this, "Register New User", true);
+        dialog.setSize(500, 450);
+        dialog.setLayout(new BorderLayout());
+        
+        JPanel formPanel = new JPanel(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(10, 10, 10, 10);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        
+        JTextField usernameField = new JTextField(20);
+        JPasswordField passwordField = new JPasswordField(20);
+        JPasswordField confirmField = new JPasswordField(20);
+        JTextField fullNameField = new JTextField(20);
+        JTextField emailField = new JTextField(20);
+        JComboBox<String> roleCombo = new JComboBox<>(new String[]{"student", "lecturer", "academic", "admin"});
+        
+        int row = 0;
+        gbc.gridx = 0; gbc.gridy = row;
+        formPanel.add(new JLabel("Username:*"), gbc);
+        gbc.gridx = 1;
+        formPanel.add(usernameField, gbc);
+        
+        row++;
+        gbc.gridx = 0; gbc.gridy = row;
+        formPanel.add(new JLabel("Password:*"), gbc);
+        gbc.gridx = 1;
+        formPanel.add(passwordField, gbc);
+        
+        row++;
+        gbc.gridx = 0; gbc.gridy = row;
+        formPanel.add(new JLabel("Confirm Password:*"), gbc);
+        gbc.gridx = 1;
+        formPanel.add(confirmField, gbc);
+        
+        row++;
+        gbc.gridx = 0; gbc.gridy = row;
+        formPanel.add(new JLabel("Full Name:*"), gbc);
+        gbc.gridx = 1;
+        formPanel.add(fullNameField, gbc);
+        
+        row++;
+        gbc.gridx = 0; gbc.gridy = row;
+        formPanel.add(new JLabel("Email:*"), gbc);
+        gbc.gridx = 1;
+        formPanel.add(emailField, gbc);
+        
+        row++;
+        gbc.gridx = 0; gbc.gridy = row;
+        formPanel.add(new JLabel("Role:*"), gbc);
+        gbc.gridx = 1;
+        formPanel.add(roleCombo, gbc);
+        
+        row++;
+        gbc.gridx = 0; gbc.gridy = row; gbc.gridwidth = 2;
+        JPanel buttonPanel = new JPanel();
+        
+        JButton saveButton = new JButton("💾 Save User");
+        saveButton.setBackground(new Color(34, 139, 34));
+        saveButton.setForeground(Color.WHITE);
+        
+        JButton cancelButton = new JButton("❌ Cancel");
+        cancelButton.setBackground(new Color(220, 60, 60));
+        cancelButton.setForeground(Color.WHITE);
+        
+        saveButton.addActionListener(e -> {
+            String username = usernameField.getText().trim();
+            String password = new String(passwordField.getPassword());
+            String confirm = new String(confirmField.getPassword());
+            String fullName = fullNameField.getText().trim();
+            String email = emailField.getText().trim();
+            String role = (String) roleCombo.getSelectedItem();
+            
+            // Validation
+            if (username.isEmpty() || password.isEmpty() || fullName.isEmpty() || email.isEmpty()) {
+                JOptionPane.showMessageDialog(dialog, "All fields marked with * are required");
+                return;
+            }
+            
+            if (!password.equals(confirm)) {
+                JOptionPane.showMessageDialog(dialog, "Passwords do not match");
+                return;
+            }
+            
+            if (!Validator.isValidEmail(email)) {
+                JOptionPane.showMessageDialog(dialog, "Invalid email format");
+                return;
+            }
+            
+            if (FileHandler.usernameExists(username)) {
+                JOptionPane.showMessageDialog(dialog, "Username already exists");
+                return;
+            }
+            
+            // Create user object based on role
+            User newUser = new Admin(username, password, email, fullName) {
+                // Override getRole to return selected role
+                @Override
+                public String getRole() {
+                    return role;
+                }
+            };
+            
+            if (FileHandler.saveUser(newUser)) {
+                JOptionPane.showMessageDialog(dialog, "User registered successfully!");
+                dialog.dispose();
+                loadUsers(); // Refresh the table
+            } else {
+                JOptionPane.showMessageDialog(dialog, "Error saving user");
+            }
+        });
+        
+        cancelButton.addActionListener(e -> dialog.dispose());
+        
+        buttonPanel.add(saveButton);
+        buttonPanel.add(cancelButton);
+        formPanel.add(buttonPanel, gbc);
+        
+        dialog.add(formPanel, BorderLayout.CENTER);
+        
+        // Info label
+        JPanel infoPanel = new JPanel();
+        infoPanel.add(new JLabel("💡 Password must be at least 6 characters"));
+        dialog.add(infoPanel, BorderLayout.SOUTH);
+        
+        dialog.setVisible(true);
+    }
+    
+    private void editSelectedUser() {
+        int selectedRow = userTable.getSelectedRow();
+        if (selectedRow == -1) {
+            JOptionPane.showMessageDialog(this, "Please select a user to edit");
+            return;
+        }
+        
+        String username = (String) userTableModel.getValueAt(selectedRow, 0);
+        JOptionPane.showMessageDialog(this, "Edit functionality for user: " + username + "\n\nThis feature would allow editing user details in a real system.");
+    }
+    
+    private void deleteSelectedUser() {
+        int selectedRow = userTable.getSelectedRow();
+        if (selectedRow == -1) {
+            JOptionPane.showMessageDialog(this, "Please select a user to delete");
+            return;
+        }
+        
+        String username = (String) userTableModel.getValueAt(selectedRow, 0);
+        
+        int confirm = JOptionPane.showConfirmDialog(this,
+            "Are you sure you want to delete user: " + username + "?",
+            "Confirm Delete",
+            JOptionPane.YES_NO_OPTION);
+        
+        if (confirm == JOptionPane.YES_OPTION) {
+            if (FileHandler.deleteUser(username)) {
+                JOptionPane.showMessageDialog(this, "User deleted successfully!");
+                loadUsers(); // Refresh the table
+            } else {
+                JOptionPane.showMessageDialog(this, "Error deleting user");
+            }
+        }
+    }
+    
+    // ==================== GRADING SYSTEM METHODS ====================
+    private void loadGradingSystem() {
+        gradingTableModel.setRowCount(0);
+        ArrayList<String[]> grades = FileHandler.readGrading();
+        
+        for (String[] grade : grades) {
+            String description = getGradeDescription(grade[0]);
+            Object[] row = {grade[0], grade[1], grade[2], description};
+            gradingTableModel.addRow(row);
+        }
+    }
+    
+    private String getGradeDescription(String grade) {
+        switch(grade.toUpperCase()) {
+            case "A+": return "Excellent - Outstanding Performance";
+            case "A": return "Excellent";
+            case "A-": return "Very Good";
+            case "B+": return "Good Plus";
+            case "B": return "Good";
+            case "B-": return "Good Minus";
+            case "C+": return "Satisfactory Plus";
+            case "C": return "Satisfactory";
+            case "D+": return "Pass Plus";
+            case "D": return "Pass";
+            case "F": return "Fail - Requires Remedial Action";
+            default: return "Grade";
+        }
+    }
+    
+    private void addGradeDialog() {
+        JDialog dialog = new JDialog(this, "Add New Grade", true);
+        dialog.setSize(400, 300);
+        dialog.setLayout(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(10, 10, 10, 10);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        
+        JTextField gradeField = new JTextField(10);
+        JTextField minField = new JTextField(10);
+        JTextField maxField = new JTextField(10);
+        
+        gbc.gridx = 0; gbc.gridy = 0;
+        dialog.add(new JLabel("Grade (e.g., A, B+, C):"), gbc);
+        gbc.gridx = 1;
+        dialog.add(gradeField, gbc);
+        
+        gbc.gridx = 0; gbc.gridy = 1;
+        dialog.add(new JLabel("Minimum Mark (0-100):"), gbc);
+        gbc.gridx = 1;
+        dialog.add(minField, gbc);
+        
+        gbc.gridx = 0; gbc.gridy = 2;
+        dialog.add(new JLabel("Maximum Mark (0-100):"), gbc);
+        gbc.gridx = 1;
+        dialog.add(maxField, gbc);
+        
+        gbc.gridx = 0; gbc.gridy = 3; gbc.gridwidth = 2;
+        JPanel buttonPanel = new JPanel();
+        
+        JButton saveButton = new JButton("💾 Save Grade");
+        saveButton.setBackground(new Color(34, 139, 34));
+        saveButton.setForeground(Color.WHITE);
+        
+        JButton cancelButton = new JButton("❌ Cancel");
+        cancelButton.setBackground(new Color(220, 60, 60));
+        cancelButton.setForeground(Color.WHITE);
+        
+        saveButton.addActionListener(e -> {
+            String grade = gradeField.getText().trim().toUpperCase();
+            String minStr = minField.getText().trim();
+            String maxStr = maxField.getText().trim();
+            
+            if (grade.isEmpty() || minStr.isEmpty() || maxStr.isEmpty()) {
+                JOptionPane.showMessageDialog(dialog, "All fields are required");
+                return;
+            }
+            
+            try {
+                int min = Integer.parseInt(minStr);
+                int max = Integer.parseInt(maxStr);
+                
+                if (min < 0 || max > 100 || min > max) {
+                    JOptionPane.showMessageDialog(dialog, "Invalid mark range (0-100)");
+                    return;
+                }
+                
+                if (FileHandler.saveGrading(grade, min, max)) {
+                    JOptionPane.showMessageDialog(dialog, "Grade added successfully!");
+                    dialog.dispose();
+                    loadGradingSystem();
+                }
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(dialog, "Marks must be numbers");
+            }
+        });
+        
+        cancelButton.addActionListener(e -> dialog.dispose());
+        
+        buttonPanel.add(saveButton);
+        buttonPanel.add(cancelButton);
+        dialog.add(buttonPanel, gbc);
+        
+        dialog.setVisible(true);
+    }
+    
+    private void loadDefaultGrades() {
+        // Clear existing grades
+        FileHandler.clearGrading();
+        
+        // APU default grading system
+        String[][] defaultGrades = {
+            {"A+", "90", "100"},
+            {"A", "85", "89"},
+            {"A-", "80", "84"},
+            {"B+", "75", "79"},
+            {"B", "70", "74"},
+            {"B-", "65", "69"},
+            {"C+", "60", "64"},
+            {"C", "55", "59"},
+            {"C-", "50", "54"},
+            {"D+", "45", "49"},
+            {"D", "40", "44"},
+            {"F", "0", "39"}
+        };
+        
+        for (String[] grade : defaultGrades) {
+            FileHandler.saveGrading(grade[0], Integer.parseInt(grade[1]), Integer.parseInt(grade[2]));
+        }
+        
+        loadGradingSystem();
+        JOptionPane.showMessageDialog(this, "Default APU grading system loaded!");
+    }
+    
+    private void clearGrades() {
+        int confirm = JOptionPane.showConfirmDialog(this, 
+            "Are you sure you want to clear all grading entries?",
+            "Confirm Clear", JOptionPane.YES_NO_OPTION);
+        
+        if (confirm == JOptionPane.YES_OPTION) {
+            FileHandler.clearGrading();
+            loadGradingSystem();
+            JOptionPane.showMessageDialog(this, "All grades cleared");
+        }
+    }
+    
+    // ==================== CLASS MANAGEMENT METHODS ====================
+    private void loadClasses() {
+        classTableModel.setRowCount(0);
+        ArrayList<String[]> classes = FileHandler.readClasses();
+        
+        for (String[] cls : classes) {
+            Object[] row = {cls[0], cls[1], cls[2], cls[3], cls[4], cls[5]};
+            classTableModel.addRow(row);
+        }
+    }
+    
+    private void createClass(String classId, String className, String moduleCode, 
+                            String lecturer, String schedule, String maxStudentsStr) {
+        
+        if (classId.isEmpty() || className.isEmpty() || moduleCode.isEmpty() || 
+            lecturer.isEmpty() || schedule.isEmpty() || maxStudentsStr.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "All fields are required");
+            return;
+        }
+        
+        try {
+            int maxStudents = Integer.parseInt(maxStudentsStr);
+            
+            if (FileHandler.saveClass(classId, className, moduleCode, lecturer, schedule, maxStudents)) {
+                JOptionPane.showMessageDialog(this, "Class created successfully!");
+            } else {
+                JOptionPane.showMessageDialog(this, "Error creating class");
+            }
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(this, "Max Students must be a number");
+        }
+    }
+    
+    // ==================== ASSIGNMENT METHODS ====================
+    private void loadAssignments() {
+        assignmentTableModel.setRowCount(0);
+        ArrayList<String[]> assignments = FileHandler.readAssignments();
+        
+        for (String[] assignment : assignments) {
+            Object[] row = {assignment[0], assignment[1], assignment[2]};
+            assignmentTableModel.addRow(row);
+        }
+    }
+    
+    // ==================== HELPER METHODS ====================
+    private void loadUsersToComboBox(JComboBox<String> combo, String role) {
+        combo.removeAllItems();
+        ArrayList<User> users = FileHandler.readUsers();
+        
+        for (User user : users) {
+            if (user.getRole().equals(role)) {
+                combo.addItem(user.getUsername() + " - " + user.getFullName());
+            }
+        }
+    }
+}
+
+// ==================== MAIN CLASS ====================
+public class admin {
+    public static void main(String[] args) {
+        // Set look and feel to system default
+        try {
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        
+        // Start the application
+        SwingUtilities.invokeLater(() -> new LoginGUI());
+    }
+}

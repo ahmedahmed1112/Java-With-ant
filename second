@@ -1,0 +1,796 @@
+import javax.swing.*;
+import javax.swing.table.*;
+import java.awt.*;
+import java.awt.event.*;
+import java.io.*;
+
+public class Admin {
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> new LoginWindow());
+    }
+}
+
+class LoginWindow extends JFrame {
+    private JTextField usernameField;
+    private JPasswordField passwordField;
+    
+    public LoginWindow() {
+        setTitle("AFS System - Admin Login");
+        setSize(450, 400);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLocationRelativeTo(null);
+        setLayout(new BorderLayout());
+        
+        // تخصيص الألوان
+        Color primaryColor = new Color(41, 128, 185);
+        Color lightBlue = new Color(236, 240, 241);
+        
+        // لوحة الرأس
+        JPanel headerPanel = new JPanel();
+        headerPanel.setBackground(primaryColor);
+        headerPanel.setBorder(BorderFactory.createEmptyBorder(30, 0, 30, 0));
+        
+        JLabel titleLabel = new JLabel("AFS Admin System");
+        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 24));
+        titleLabel.setForeground(Color.WHITE);
+        headerPanel.add(titleLabel);
+        
+        add(headerPanel, BorderLayout.NORTH);
+        
+        // لوحة الدخول الرئيسية
+        JPanel mainPanel = new JPanel();
+        mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
+        mainPanel.setBackground(Color.WHITE);
+        mainPanel.setBorder(BorderFactory.createEmptyBorder(20, 40, 20, 40));
+        
+        // أيقونة الدخول
+        JLabel loginIcon = new JLabel("🔐", SwingConstants.CENTER);
+        loginIcon.setFont(new Font("Arial", Font.PLAIN, 48));
+        loginIcon.setAlignmentX(Component.CENTER_ALIGNMENT);
+        mainPanel.add(loginIcon);
+        
+        mainPanel.add(Box.createRigidArea(new Dimension(0, 20)));
+        
+        // عنوان الدخول
+        JLabel loginTitle = new JLabel("Administrator Login");
+        loginTitle.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        loginTitle.setForeground(new Color(50, 50, 50));
+        loginTitle.setAlignmentX(Component.CENTER_ALIGNMENT);
+        mainPanel.add(loginTitle);
+        
+        mainPanel.add(Box.createRigidArea(new Dimension(0, 30)));
+        
+        // لوحة اسم المستخدم
+        JPanel usernamePanel = new JPanel();
+        usernamePanel.setLayout(new BoxLayout(usernamePanel, BoxLayout.Y_AXIS));
+        usernamePanel.setBackground(Color.WHITE);
+        usernamePanel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        usernamePanel.setMaximumSize(new Dimension(300, 70));
+        
+        JLabel userLabel = new JLabel("Username");
+        userLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        userLabel.setForeground(new Color(100, 100, 100));
+        userLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        usernamePanel.add(userLabel);
+        
+        usernamePanel.add(Box.createRigidArea(new Dimension(0, 5)));
+        
+        usernameField = new JTextField();
+        usernameField.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        usernameField.setPreferredSize(new Dimension(300, 40));
+        usernameField.setMaximumSize(new Dimension(300, 40));
+        usernameField.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new Color(200, 200, 200), 1),
+            BorderFactory.createEmptyBorder(10, 10, 10, 10)
+        ));
+        usernameField.setBackground(lightBlue);
+        usernamePanel.add(usernameField);
+        
+        mainPanel.add(usernamePanel);
+        
+        mainPanel.add(Box.createRigidArea(new Dimension(0, 15)));
+        
+        // لوحة كلمة المرور
+        JPanel passwordPanel = new JPanel();
+        passwordPanel.setLayout(new BoxLayout(passwordPanel, BoxLayout.Y_AXIS));
+        passwordPanel.setBackground(Color.WHITE);
+        passwordPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        passwordPanel.setMaximumSize(new Dimension(300, 70));
+        
+        JLabel passLabel = new JLabel("Password");
+        passLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        passLabel.setForeground(new Color(100, 100, 100));
+        passLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        passwordPanel.add(passLabel);
+        
+        passwordPanel.add(Box.createRigidArea(new Dimension(0, 5)));
+        
+        passwordField = new JPasswordField();
+        passwordField.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        passwordField.setPreferredSize(new Dimension(300, 40));
+        passwordField.setMaximumSize(new Dimension(300, 40));
+        passwordField.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new Color(200, 200, 200), 1),
+            BorderFactory.createEmptyBorder(10, 10, 10, 10)
+        ));
+        passwordField.setBackground(lightBlue);
+        passwordPanel.add(passwordField);
+        
+        mainPanel.add(passwordPanel);
+        
+        mainPanel.add(Box.createRigidArea(new Dimension(0, 25)));
+        
+        // زر الدخول
+        JButton loginBtn = new JButton("LOGIN");
+        loginBtn.setBackground(primaryColor);
+        loginBtn.setForeground(Color.WHITE);
+        loginBtn.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        loginBtn.setFocusPainted(false);
+        loginBtn.setBorderPainted(false);
+        loginBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        loginBtn.setPreferredSize(new Dimension(300, 45));
+        loginBtn.setMaximumSize(new Dimension(300, 45));
+        loginBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
+        
+        // تأثير الزر
+        loginBtn.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                loginBtn.setBackground(new Color(52, 152, 219));
+            }
+            
+            @Override
+            public void mouseExited(MouseEvent e) {
+                loginBtn.setBackground(primaryColor);
+            }
+        });
+        
+        loginBtn.addActionListener(e -> checkLogin());
+        mainPanel.add(loginBtn);
+        
+        // تفعيل زر Enter للدخول
+        passwordField.addActionListener(e -> checkLogin());
+        
+        add(mainPanel, BorderLayout.CENTER);
+        
+        // لوحة التذييل
+        JPanel footerPanel = new JPanel();
+        footerPanel.setBackground(new Color(240, 240, 240));
+        footerPanel.setBorder(BorderFactory.createEmptyBorder(15, 0, 15, 0));
+        
+        JLabel footerLabel = new JLabel("APU Assessment Feedback System • Secure Access");
+        footerLabel.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        footerLabel.setForeground(new Color(120, 120, 120));
+        footerPanel.add(footerLabel);
+        
+        add(footerPanel, BorderLayout.SOUTH);
+        
+        setVisible(true);
+    }
+    
+    private void checkLogin() {
+        String username = usernameField.getText().trim();
+        String password = new String(passwordField.getPassword());
+        
+        if (username.equals("admin") && password.equals("admin123")) {
+            dispose();
+            new AdminDashboard();
+        } else {
+            // عرض رسالة خطأ مع تصميم أفضل
+            JOptionPane.showMessageDialog(this, 
+                "Invalid username or password. Please try again.", 
+                "Login Failed", 
+                JOptionPane.ERROR_MESSAGE);
+            
+            // مسح حقل كلمة المرور
+            passwordField.setText("");
+        }
+    }
+}
+
+class AdminDashboard extends JFrame {
+    private JTabbedPane tabs;
+    private Color primaryColor = new Color(41, 128, 185);
+    private Color secondaryColor = new Color(52, 152, 219);
+    
+    public AdminDashboard() {
+        setTitle("Admin Dashboard - AFS System");
+        setSize(1100, 700);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLocationRelativeTo(null);
+        setLayout(new BorderLayout());
+        
+        // شريط الأعلى
+        JPanel topPanel = new JPanel(new BorderLayout());
+        topPanel.setBackground(primaryColor);
+        topPanel.setBorder(BorderFactory.createEmptyBorder(15, 25, 15, 25));
+        
+        // معلومات المستخدم
+        JPanel userPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 0));
+        userPanel.setOpaque(false);
+        
+        JLabel userIcon = new JLabel("👨‍💼");
+        userIcon.setFont(new Font("Arial", Font.PLAIN, 28));
+        
+        JPanel namePanel = new JPanel();
+        namePanel.setLayout(new BoxLayout(namePanel, BoxLayout.Y_AXIS));
+        namePanel.setOpaque(false);
+        
+        JLabel nameLabel = new JLabel("Welcome, Khaled");
+        nameLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        nameLabel.setForeground(Color.WHITE);
+        
+        JLabel roleLabel = new JLabel("System Administrator");
+        roleLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        roleLabel.setForeground(new Color(220, 220, 255));
+        
+        namePanel.add(nameLabel);
+        namePanel.add(roleLabel);
+        
+        userPanel.add(userIcon);
+        userPanel.add(namePanel);
+        
+        // أزرار التحكم
+        JPanel controlPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 0));
+        controlPanel.setOpaque(false);
+        
+        JButton helpBtn = createHeaderButton("❓ Help", new Color(241, 196, 15));
+        JButton logoutBtn = createHeaderButton("🚪 Logout", new Color(231, 76, 60));
+        
+        helpBtn.addActionListener(e -> showHelpDialog());
+        logoutBtn.addActionListener(e -> logout());
+        
+        controlPanel.add(helpBtn);
+        controlPanel.add(logoutBtn);
+        
+        topPanel.add(userPanel, BorderLayout.WEST);
+        topPanel.add(controlPanel, BorderLayout.EAST);
+        
+        add(topPanel, BorderLayout.NORTH);
+        
+        // التبويبات الرئيسية
+        tabs = new JTabbedPane();
+        tabs.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        
+        // إضافة التبويبات
+        tabs.addTab("👥 User Management", createUsersTab());
+        tabs.addTab("📊 Grading System", createGradingTab());
+        tabs.addTab("🏫 Class Management", createClassesTab());
+        tabs.addTab("👨‍🏫 Assign Lecturers", createAssignTab());
+        
+        add(tabs, BorderLayout.CENTER);
+        
+        // شريط الحالة
+        JPanel statusBar = new JPanel(new BorderLayout());
+        statusBar.setBackground(new Color(245, 245, 245));
+        statusBar.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createMatteBorder(1, 0, 0, 0, new Color(220, 220, 220)),
+            BorderFactory.createEmptyBorder(10, 20, 10, 20)
+        ));
+        
+        JLabel statusLabel = new JLabel("✅ System: Ready | Users: 5 | Classes: 8");
+        statusLabel.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        statusLabel.setForeground(new Color(100, 100, 100));
+        
+        JLabel versionLabel = new JLabel("AFS v1.0");
+        versionLabel.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        versionLabel.setForeground(new Color(100, 100, 100));
+        
+        statusBar.add(statusLabel, BorderLayout.WEST);
+        statusBar.add(versionLabel, BorderLayout.EAST);
+        
+        add(statusBar, BorderLayout.SOUTH);
+        
+        setVisible(true);
+    }
+    
+    private JButton createHeaderButton(String text, Color bgColor) {
+        JButton button = new JButton(text);
+        button.setBackground(bgColor);
+        button.setForeground(Color.WHITE);
+        button.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        button.setFocusPainted(false);
+        button.setBorderPainted(false);
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        button.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
+        
+        button.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                button.setBackground(bgColor.darker());
+            }
+            
+            @Override
+            public void mouseExited(MouseEvent e) {
+                button.setBackground(bgColor);
+            }
+        });
+        
+        return button;
+    }
+    
+    // تبويب إدارة المستخدمين
+    private JPanel createUsersTab() {
+        JPanel panel = new JPanel(new BorderLayout(10, 10));
+        panel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
+        panel.setBackground(Color.WHITE);
+        
+        // شريط الأدوات
+        JPanel toolbar = new JPanel(new BorderLayout());
+        toolbar.setBackground(Color.WHITE);
+        
+        JLabel title = new JLabel("User Management");
+        title.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        title.setForeground(primaryColor);
+        
+        JPanel buttonsPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+        buttonsPanel.setBackground(Color.WHITE);
+        
+        JButton addBtn = createToolButton("➕ Add New", new Color(46, 204, 113));
+        JButton editBtn = createToolButton("✏️ Edit", new Color(52, 152, 219));
+        JButton deleteBtn = createToolButton("🗑️ Delete", new Color(231, 76, 60));
+        JButton refreshBtn = createToolButton("🔄 Refresh", new Color(155, 89, 182));
+        
+        addBtn.addActionListener(e -> addUser());
+        refreshBtn.addActionListener(e -> refreshTable());
+        
+        buttonsPanel.add(addBtn);
+        buttonsPanel.add(editBtn);
+        buttonsPanel.add(deleteBtn);
+        buttonsPanel.add(refreshBtn);
+        
+        toolbar.add(title, BorderLayout.WEST);
+        toolbar.add(buttonsPanel, BorderLayout.EAST);
+        
+        panel.add(toolbar, BorderLayout.NORTH);
+        
+        // جدول المستخدمين
+        String[] columns = {"ID", "Username", "Full Name", "Role", "Email", "Status"};
+        Object[][] data = {
+            {"ADM001", "admin", "Khaled (You)", "Administrator", "khaled@apu.edu.my", "🟢 Active"},
+            {"LEC001", "lecturer1", "Dr. Ali Ahmad", "Lecturer", "ali@apu.edu.my", "🟢 Active"},
+            {"STU001", "student1", "Ahmad Khan", "Student", "ahmad@apu.edu.my", "🟢 Active"},
+            {"ACA001", "academic1", "Dr. Sara Lim", "Academic Leader", "sara@apu.edu.my", "🟡 Pending"},
+            {"LEC002", "lecturer2", "Dr. John Smith", "Lecturer", "john@apu.edu.my", "🟢 Active"},
+            {"STU002", "student2", "Fatima Ali", "Student", "fatima@apu.edu.my", "🔴 Inactive"}
+        };
+        
+        JTable userTable = createStyledTable(data, columns);
+        userTable.setRowHeight(35);
+        
+        JScrollPane scrollPane = new JScrollPane(userTable);
+        scrollPane.setBorder(BorderFactory.createLineBorder(new Color(220, 220, 220)));
+        
+        panel.add(scrollPane, BorderLayout.CENTER);
+        
+        return panel;
+    }
+    
+    // تبويب نظام الدرجات
+    private JPanel createGradingTab() {
+        JPanel panel = new JPanel(new BorderLayout(10, 10));
+        panel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
+        panel.setBackground(Color.WHITE);
+        
+        JLabel title = new JLabel("APU Grading System");
+        title.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        title.setForeground(primaryColor);
+        title.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 0));
+        panel.add(title, BorderLayout.NORTH);
+        
+        // جدول الدرجات مع تلوين
+        String[] columns = {"Grade", "Minimum", "Maximum", "GPA", "Description"};
+        Object[][] data = {
+            {"A", "85", "100", "4.00", "Excellent"},
+            {"A-", "80", "84", "3.67", "Very Good"},
+            {"B+", "75", "79", "3.33", "Good"},
+            {"B", "70", "74", "3.00", "Good"},
+            {"B-", "65", "69", "2.67", "Satisfactory"},
+            {"C+", "60", "64", "2.33", "Satisfactory"},
+            {"C", "55", "59", "2.00", "Pass"},
+            {"D", "50", "54", "1.00", "Pass"},
+            {"F", "0", "49", "0.00", "Fail"}
+        };
+        
+        JTable gradeTable = new JTable(data, columns) {
+            @Override
+            public Component prepareRenderer(TableCellRenderer renderer, int row, int column) {
+                Component c = super.prepareRenderer(renderer, row, column);
+                
+                if (!isRowSelected(row)) {
+                    String grade = (String) getValueAt(row, 0);
+                    switch(grade) {
+                        case "A":
+                            c.setBackground(new Color(220, 255, 220));
+                            break;
+                        case "A-":
+                        case "B+":
+                            c.setBackground(new Color(230, 255, 230));
+                            break;
+                        case "B":
+                        case "B-":
+                            c.setBackground(new Color(255, 255, 220));
+                            break;
+                        case "C+":
+                        case "C":
+                            c.setBackground(new Color(255, 240, 200));
+                            break;
+                        case "D":
+                        case "F":
+                            c.setBackground(new Color(255, 220, 220));
+                            break;
+                        default:
+                            c.setBackground(Color.WHITE);
+                    }
+                }
+                return c;
+            }
+        };
+        
+        gradeTable.setRowHeight(35);
+        gradeTable.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        gradeTable.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 12));
+        gradeTable.getTableHeader().setBackground(new Color(240, 240, 240));
+        
+        JScrollPane scrollPane = new JScrollPane(gradeTable);
+        panel.add(scrollPane, BorderLayout.CENTER);
+        
+        return panel;
+    }
+    
+    // تبويب إدارة الفصول
+    private JPanel createClassesTab() {
+        JPanel panel = new JPanel(new BorderLayout(10, 10));
+        panel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
+        panel.setBackground(Color.WHITE);
+        
+        // نموذج إنشاء فصل
+        JPanel formPanel = new JPanel(new GridBagLayout());
+        formPanel.setBackground(Color.WHITE);
+        formPanel.setBorder(BorderFactory.createTitledBorder(
+            BorderFactory.createLineBorder(secondaryColor, 1),
+            "Create New Class"
+        ));
+        
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(8, 10, 8, 10);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        
+        // حقول الإدخال
+        String[] labels = {"Class ID:", "Class Name:", "Module Code:", "Lecturer:", "Schedule:", "Max Students:"};
+        JTextField[] fields = new JTextField[labels.length];
+        
+        for (int i = 0; i < labels.length; i++) {
+            gbc.gridx = 0; gbc.gridy = i;
+            JLabel label = new JLabel(labels[i]);
+            label.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+            formPanel.add(label, gbc);
+            
+            gbc.gridx = 1;
+            fields[i] = new JTextField(15);
+            fields[i].setFont(new Font("Segoe UI", Font.PLAIN, 12));
+            fields[i].setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(200, 200, 200), 1),
+                BorderFactory.createEmptyBorder(6, 8, 6, 8)
+            ));
+            formPanel.add(fields[i], gbc);
+        }
+        
+        gbc.gridx = 0; gbc.gridy = labels.length; gbc.gridwidth = 2;
+        JButton createBtn = new JButton("➕ Create Class");
+        createBtn.setBackground(secondaryColor);
+        createBtn.setForeground(Color.WHITE);
+        createBtn.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        createBtn.setFocusPainted(false);
+        createBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        createBtn.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
+        
+        createBtn.addActionListener(e -> {
+            boolean allFilled = true;
+            for (JTextField field : fields) {
+                if (field.getText().trim().isEmpty()) {
+                    allFilled = false;
+                    break;
+                }
+            }
+            
+            if (allFilled) {
+                JOptionPane.showMessageDialog(this, 
+                    "Class created successfully!\n\n" +
+                    "Class ID: " + fields[0].getText() + "\n" +
+                    "Class Name: " + fields[1].getText() + "\n" +
+                    "Module: " + fields[2].getText() + "\n" +
+                    "Lecturer: " + fields[3].getText(),
+                    "Success", 
+                    JOptionPane.INFORMATION_MESSAGE);
+                
+                // مسح الحقول
+                for (JTextField field : fields) {
+                    field.setText("");
+                }
+            } else {
+                JOptionPane.showMessageDialog(this, 
+                    "Please fill in all fields!", 
+                    "Incomplete Form", 
+                    JOptionPane.WARNING_MESSAGE);
+            }
+        });
+        
+        formPanel.add(createBtn, gbc);
+        
+        panel.add(formPanel, BorderLayout.NORTH);
+        
+        // جدول الفصول
+        String[] columns = {"Class ID", "Class Name", "Module", "Lecturer", "Schedule", "Students", "Status"};
+        Object[][] data = {
+            {"CS101", "Programming 1", "CS1001", "Dr. Ali Ahmad", "Mon 10:00-12:00", "30/35", "🟢 Active"},
+            {"CS102", "Programming 2", "CS1002", "Dr. Sara Lim", "Tue 14:00-16:00", "25/30", "🟢 Active"},
+            {"MATH101", "Calculus", "MATH1001", "Dr. John Smith", "Wed 09:00-11:00", "40/45", "🟢 Active"},
+            {"ENG101", "English", "ENG1001", "Ms. Emily Wong", "Thu 13:00-15:00", "28/30", "🟡 Pending"}
+        };
+        
+        JTable classTable = createStyledTable(data, columns);
+        classTable.setRowHeight(35);
+        
+        JScrollPane scrollPane = new JScrollPane(classTable);
+        panel.add(scrollPane, BorderLayout.CENTER);
+        
+        return panel;
+    }
+    
+    // تبويب تعيين المحاضرين
+    private JPanel createAssignTab() {
+        JPanel panel = new JPanel(new BorderLayout(10, 10));
+        panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        panel.setBackground(Color.WHITE);
+        
+        JLabel title = new JLabel("Assign Lecturers to Academic Leaders");
+        title.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        title.setForeground(primaryColor);
+        title.setHorizontalAlignment(SwingConstants.CENTER);
+        title.setBorder(BorderFactory.createEmptyBorder(0, 0, 20, 0));
+        panel.add(title, BorderLayout.NORTH);
+        
+        // لوحة النموذج
+        JPanel formPanel = new JPanel(new GridBagLayout());
+        formPanel.setBackground(Color.WHITE);
+        formPanel.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new Color(220, 220, 220), 1),
+            BorderFactory.createEmptyBorder(30, 30, 30, 30)
+        ));
+        
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(15, 15, 15, 15);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        
+        // المحاضر
+        gbc.gridx = 0; gbc.gridy = 0;
+        JLabel lectLabel = new JLabel("Select Lecturer:");
+        lectLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        formPanel.add(lectLabel, gbc);
+        
+        gbc.gridx = 1;
+        JComboBox<String> lectCombo = new JComboBox<>();
+        lectCombo.addItem("-- Select Lecturer --");
+        lectCombo.addItem("Dr. Ali Ahmad (CS Department)");
+        lectCombo.addItem("Dr. Sara Lim (IT Department)");
+        lectCombo.addItem("Dr. John Smith (Math Department)");
+        lectCombo.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        lectCombo.setPreferredSize(new Dimension(250, 35));
+        formPanel.add(lectCombo, gbc);
+        
+        // القائد الأكاديمي
+        gbc.gridx = 0; gbc.gridy = 1;
+        JLabel leadLabel = new JLabel("Select Academic Leader:");
+        leadLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        formPanel.add(leadLabel, gbc);
+        
+        gbc.gridx = 1;
+        JComboBox<String> leadCombo = new JComboBox<>();
+        leadCombo.addItem("-- Select Academic Leader --");
+        leadCombo.addItem("Dr. Robert Chen (Head of CS)");
+        leadCombo.addItem("Prof. Emily Davis (Head of IT)");
+        leadCombo.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        leadCombo.setPreferredSize(new Dimension(250, 35));
+        formPanel.add(leadCombo, gbc);
+        
+        // زر التعيين
+        gbc.gridx = 0; gbc.gridy = 2; gbc.gridwidth = 2;
+        JButton assignBtn = new JButton("✅ Assign Lecturer");
+        assignBtn.setBackground(new Color(46, 204, 113));
+        assignBtn.setForeground(Color.WHITE);
+        assignBtn.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        assignBtn.setFocusPainted(false);
+        assignBtn.setBorderPainted(false);
+        assignBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        assignBtn.setPreferredSize(new Dimension(200, 45));
+        
+        assignBtn.addActionListener(e -> {
+            String lecturer = (String) lectCombo.getSelectedItem();
+            String leader = (String) leadCombo.getSelectedItem();
+            
+            if (lecturer.contains("-- Select") || leader.contains("-- Select")) {
+                JOptionPane.showMessageDialog(this, 
+                    "Please select both lecturer and academic leader!", 
+                    "Selection Required", 
+                    JOptionPane.WARNING_MESSAGE);
+            } else {
+                int confirm = JOptionPane.showConfirmDialog(this,
+                    "Assign " + lecturer + " to " + leader + "?\n\n" +
+                    "This assignment will be saved to the system.",
+                    "Confirm Assignment",
+                    JOptionPane.YES_NO_OPTION);
+                
+                if (confirm == JOptionPane.YES_OPTION) {
+                    JOptionPane.showMessageDialog(this, 
+                        "Assignment completed successfully!", 
+                        "Success", 
+                        JOptionPane.INFORMATION_MESSAGE);
+                    
+                    // إعادة التعيين
+                    lectCombo.setSelectedIndex(0);
+                    leadCombo.setSelectedIndex(0);
+                }
+            }
+        });
+        
+        formPanel.add(assignBtn, gbc);
+        
+        panel.add(formPanel, BorderLayout.CENTER);
+        
+        return panel;
+    }
+    
+    private JButton createToolButton(String text, Color bgColor) {
+        JButton button = new JButton(text);
+        button.setBackground(bgColor);
+        button.setForeground(Color.WHITE);
+        button.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        button.setFocusPainted(false);
+        button.setBorderPainted(false);
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        button.setBorder(BorderFactory.createEmptyBorder(8, 15, 8, 15));
+        
+        button.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                button.setBackground(bgColor.darker());
+            }
+            
+            @Override
+            public void mouseExited(MouseEvent e) {
+                button.setBackground(bgColor);
+            }
+        });
+        
+        return button;
+    }
+    
+    private JTable createStyledTable(Object[][] data, String[] columns) {
+        JTable table = new JTable(data, columns);
+        table.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        table.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 12));
+        table.getTableHeader().setBackground(new Color(240, 240, 240));
+        table.getTableHeader().setForeground(new Color(50, 50, 50));
+        table.setGridColor(new Color(230, 230, 230));
+        table.setShowGrid(true);
+        table.setSelectionBackground(new Color(52, 152, 219, 50));
+        
+        return table;
+    }
+    
+    private void addUser() {
+        JDialog dialog = new JDialog(this, "Add New User", true);
+        dialog.setSize(400, 450);
+        dialog.setLocationRelativeTo(this);
+        dialog.setLayout(new BorderLayout());
+        
+        JPanel mainPanel = new JPanel(new GridBagLayout());
+        mainPanel.setBorder(BorderFactory.createEmptyBorder(25, 25, 25, 25));
+        
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(10, 10, 10, 10);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        
+        JLabel title = new JLabel("Add New User");
+        title.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        title.setForeground(primaryColor);
+        gbc.gridx = 0; gbc.gridy = 0; gbc.gridwidth = 2;
+        mainPanel.add(title, gbc);
+        
+        // حقول الإدخال
+        String[] labels = {"Username:", "Full Name:", "Email Address:", "User Role:"};
+        JTextField[] fields = new JTextField[3];
+        
+        for (int i = 0; i < labels.length; i++) {
+            gbc.gridwidth = 1;
+            gbc.gridx = 0; gbc.gridy = i + 1;
+            mainPanel.add(new JLabel(labels[i]), gbc);
+            
+            gbc.gridx = 1;
+            if (i == 3) { // الدور
+                JComboBox<String> roleBox = new JComboBox<>();
+                roleBox.addItem("Student");
+                roleBox.addItem("Lecturer");
+                roleBox.addItem("Academic Leader");
+                roleBox.addItem("Administrator");
+                roleBox.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+                mainPanel.add(roleBox, gbc);
+            } else {
+                fields[i] = new JTextField(15);
+                fields[i].setFont(new Font("Segoe UI", Font.PLAIN, 12));
+                fields[i].setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createLineBorder(new Color(200, 200, 200), 1),
+                    BorderFactory.createEmptyBorder(6, 8, 6, 8)
+                ));
+                mainPanel.add(fields[i], gbc);
+            }
+        }
+        
+        // الأزرار
+        gbc.gridx = 0; gbc.gridy = 5; gbc.gridwidth = 2;
+        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 0));
+        btnPanel.setOpaque(false);
+        
+        JButton saveBtn = new JButton("💾 Save");
+        saveBtn.setBackground(new Color(46, 204, 113));
+        saveBtn.setForeground(Color.WHITE);
+        
+        JButton cancelBtn = new JButton("❌ Cancel");
+        cancelBtn.setBackground(new Color(231, 76, 60));
+        cancelBtn.setForeground(Color.WHITE);
+        
+        saveBtn.addActionListener(e -> {
+            JOptionPane.showMessageDialog(dialog, 
+                "User added successfully!", 
+                "Success", 
+                JOptionPane.INFORMATION_MESSAGE);
+            dialog.dispose();
+        });
+        
+        cancelBtn.addActionListener(e -> dialog.dispose());
+        
+        btnPanel.add(saveBtn);
+        btnPanel.add(cancelBtn);
+        mainPanel.add(btnPanel, gbc);
+        
+        dialog.add(mainPanel);
+        dialog.setVisible(true);
+    }
+    
+    private void refreshTable() {
+        JOptionPane.showMessageDialog(this, 
+            "User list refreshed!", 
+            "Refresh", 
+            JOptionPane.INFORMATION_MESSAGE);
+    }
+    
+    private void showHelpDialog() {
+        JOptionPane.showMessageDialog(this, 
+            "<html><div style='width: 300px;'>" +
+            "<h3>AFS Admin System Help</h3>" +
+            "<p><b>1. User Management:</b> Add, edit, and manage system users</p>" +
+            "<p><b>2. Grading System:</b> View and manage APU grading scale</p>" +
+            "<p><b>3. Class Management:</b> Create and manage classes</p>" +
+            "<p><b>4. Assign Lecturers:</b> Assign lecturers to academic leaders</p>" +
+            "<hr>" +
+            "<p><i>For technical support, contact:<br>" +
+            "IT Department - admin@apu.edu.my</i></p>" +
+            "</div></html>",
+            "Help & Support",
+            JOptionPane.INFORMATION_MESSAGE);
+    }
+    
+    private void logout() {
+        int confirm = JOptionPane.showConfirmDialog(this,
+            "Are you sure you want to logout?",
+            "Confirm Logout",
+            JOptionPane.YES_NO_OPTION,
+            JOptionPane.QUESTION_MESSAGE);
+        
+        if (confirm == JOptionPane.YES_OPTION) {
+            dispose();
+            new LoginWindow();
+        }
+    }
+}
