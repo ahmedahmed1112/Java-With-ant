@@ -34,15 +34,33 @@ public class ManageModulesFrame extends JFrame {
 
     private static final String LEADER_LECTURER_FILE = "data/leader_lecturer.txt";
 
-    // ✅ Increased height for better text visibility
+    // ✅ Your height stays the same
     private static final int FIELD_HEIGHT = 45;
+
+    // ✅ NEW: embedded mode support (small change)
+    private final boolean embedded;
+    private final Runnable onBackToDashboard;
+    private JPanel mainPanel;
 
     public ManageModulesFrame() {
         this(null);
     }
 
+    // Standalone (old behavior)
     public ManageModulesFrame(User user) {
+        this(user, false, null);
+        setTitle("Manage Modules (Leader)");
+        setSize(1050, 650);
+        setLocationRelativeTo(null);
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        setContentPane(mainPanel);
+    }
+
+    // ✅ Embedded (new behavior)
+    public ManageModulesFrame(User user, boolean embedded, Runnable onBackToDashboard) {
         this.loggedInUser = user;
+        this.embedded = embedded;
+        this.onBackToDashboard = onBackToDashboard;
 
         if (loggedInUser != null && loggedInUser.getUserId() != null) {
             this.leaderId = loggedInUser.getUserId().trim();
@@ -50,15 +68,34 @@ public class ManageModulesFrame extends JFrame {
             this.leaderId = "";
         }
 
-        setTitle("Manage Modules (Leader)");
-        setSize(1050, 650);
-        setLocationRelativeTo(null);
-        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        buildUI();
 
+        // load after UI is built
+        loadTable();
+
+        if (leaderId.isEmpty()) {
+            btnAdd.setEnabled(false);
+            btnUpdate.setEnabled(false);
+            btnDelete.setEnabled(false);
+
+            JOptionPane.showMessageDialog(embedded ? mainPanel : this,
+                    "Leader ID is missing.",
+                    "Missing Leader ID",
+                    JOptionPane.WARNING_MESSAGE);
+        }
+    }
+
+    // ✅ Getter for embedding
+    public JPanel getMainPanel() {
+        return mainPanel;
+    }
+
+    // ✅ UI builder using your exact layout
+    private void buildUI() {
         JPanel root = new JPanel(new BorderLayout());
         root.setBackground(Theme.BG);
         root.setBorder(new EmptyBorder(18, 18, 18, 18));
-        setContentPane(root);
+        this.mainPanel = root;
 
         // ===== Top bar =====
         JPanel top = new JPanel(new BorderLayout());
@@ -128,16 +165,16 @@ public class ManageModulesFrame extends JFrame {
         formTitle.setFont(UIUtils.font(14, Font.BOLD));
         formCard.add(formTitle, BorderLayout.NORTH);
 
-        // ✅ Switched to GridBagLayout for better control over field sizes
+        // ✅ Your GridBagLayout stays the same
         JPanel form = new JPanel(new GridBagLayout());
         form.setOpaque(false);
         form.setBorder(new EmptyBorder(12, 0, 12, 0));
-        
+
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.gridx = 0;
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.weightx = 1.0;
-        gbc.insets = new Insets(0, 0, 15, 0); // Vertical spacing between fields
+        gbc.insets = new Insets(0, 0, 15, 0);
 
         txtModuleName = UIUtils.modernTextField();
         makeFieldTaller(txtModuleName);
@@ -156,13 +193,11 @@ public class ManageModulesFrame extends JFrame {
         txtLecturerId.setForeground(Color.BLACK);
         txtLecturerId.setCaretColor(Color.BLACK);
 
-        // Adding labeled fields using GridBag
         gbc.gridy = 0; form.add(labeled("Module Name", txtModuleName), gbc);
         gbc.gridy = 1; form.add(labeled("Module Code", txtModuleCode), gbc);
         gbc.gridy = 2; form.add(labeled("Credit Hours", txtCreditHours), gbc);
         gbc.gridy = 3; form.add(labeled("Lecturer ID (Read Only)", txtLecturerId), gbc);
 
-        // Use NORTH to prevent fields from stretching vertically to fill the card
         formCard.add(form, BorderLayout.NORTH);
 
         JPanel actions = new JPanel(new GridLayout(2, 2, 10, 10));
@@ -171,12 +206,21 @@ public class ManageModulesFrame extends JFrame {
         btnAdd = UIUtils.primaryButton("Add Module");
         btnUpdate = UIUtils.primaryButton("Update Selected");
         btnDelete = UIUtils.dangerButton("Delete Selected");
-        JButton btnClose = UIUtils.ghostButton("Close");
+
+        // ✅ Close button becomes Back when embedded
+        JButton btnClose = UIUtils.ghostButton(embedded ? "Back to Dashboard" : "Close");
 
         btnAdd.addActionListener(e -> onAdd());
         btnUpdate.addActionListener(e -> onUpdate());
         btnDelete.addActionListener(e -> onDelete());
-        btnClose.addActionListener(e -> dispose());
+
+        btnClose.addActionListener(e -> {
+            if (embedded) {
+                if (onBackToDashboard != null) onBackToDashboard.run();
+            } else {
+                dispose();
+            }
+        });
 
         actions.add(btnAdd);
         actions.add(btnUpdate);
@@ -201,23 +245,9 @@ public class ManageModulesFrame extends JFrame {
             String lec = valueAt(r, 4).replace(" (INVALID)", "").trim();
             txtLecturerId.setText(lec);
         });
-
-        loadTable();
-
-        if (leaderId.isEmpty()) {
-            btnAdd.setEnabled(false);
-            btnUpdate.setEnabled(false);
-            btnDelete.setEnabled(false);
-
-            JOptionPane.showMessageDialog(this,
-                    "Leader ID is missing.",
-                    "Missing Leader ID",
-                    JOptionPane.WARNING_MESSAGE);
-        }
     }
 
     private void makeFieldTaller(JTextField field) {
-        // Enforce the taller height
         field.setPreferredSize(new Dimension(field.getPreferredSize().width, FIELD_HEIGHT));
         field.setMinimumSize(new Dimension(10, FIELD_HEIGHT));
     }
@@ -228,6 +258,7 @@ public class ManageModulesFrame extends JFrame {
 
         Set<String> allowedLecturers = readAllowedLecturersForLeader(leaderId);
         List<Module> modules = ModuleService.getByLeader(leaderId);
+
         for (Module m : modules) {
             String lecturer = (m.getLecturerId() == null) ? "" : m.getLecturerId().trim();
             if (!lecturer.isEmpty() && !allowedLecturers.contains(lecturer.toUpperCase())) {
@@ -247,10 +278,12 @@ public class ManageModulesFrame extends JFrame {
     private Set<String> readAllowedLecturersForLeader(String leaderId) {
         Set<String> set = new LinkedHashSet<>();
         List<String> lines = FileManager.readAll(LEADER_LECTURER_FILE);
+
         for (String line : lines) {
             if (line == null || line.trim().isEmpty()) continue;
             String[] p = line.trim().split("\\|", -1);
             if (p.length < 2) continue;
+
             if (leaderId.equalsIgnoreCase(p[0].trim())) {
                 set.add(p[1].trim().toUpperCase());
             }
@@ -264,10 +297,10 @@ public class ManageModulesFrame extends JFrame {
             String code = txtModuleCode.getText().trim();
             int credits = parseCredits();
             Module created = ModuleService.createModule(leaderId, name, code, credits);
-            JOptionPane.showMessageDialog(this, "Module created: " + created.getModuleId());
+            JOptionPane.showMessageDialog(embedded ? mainPanel : this, "Module created: " + created.getModuleId());
             loadTable();
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, ex.getMessage(), "Create failed", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(embedded ? mainPanel : this, ex.getMessage(), "Create failed", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -280,10 +313,10 @@ public class ManageModulesFrame extends JFrame {
             String code = txtModuleCode.getText().trim();
             int credits = parseCredits();
             ModuleService.updateModule(leaderId, moduleId, name, code, credits);
-            JOptionPane.showMessageDialog(this, "Module updated: " + moduleId);
+            JOptionPane.showMessageDialog(embedded ? mainPanel : this, "Module updated: " + moduleId);
             loadTable();
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, ex.getMessage(), "Update failed", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(embedded ? mainPanel : this, ex.getMessage(), "Update failed", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -291,13 +324,15 @@ public class ManageModulesFrame extends JFrame {
         int r = table.getSelectedRow();
         if (r < 0) return;
         String moduleId = valueAt(r, 0);
-        int confirm = JOptionPane.showConfirmDialog(this, "Delete module " + moduleId + "?", "Confirm delete", JOptionPane.YES_NO_OPTION);
+        int confirm = JOptionPane.showConfirmDialog(embedded ? mainPanel : this,
+                "Delete module " + moduleId + "?", "Confirm delete", JOptionPane.YES_NO_OPTION);
         if (confirm != JOptionPane.YES_OPTION) return;
+
         try {
             ModuleService.deleteModule(leaderId, moduleId);
             loadTable();
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, ex.getMessage(), "Delete failed", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(embedded ? mainPanel : this, ex.getMessage(), "Delete failed", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -338,12 +373,15 @@ public class ManageModulesFrame extends JFrame {
         t.setForeground(Theme.TEXT);
         t.setSelectionBackground(Theme.PRIMARY);
         t.setSelectionForeground(Color.WHITE);
+
         JTableHeader h = t.getTableHeader();
         h.setBackground(Theme.SIDEBAR);
         h.setForeground(Theme.TEXT);
+
         DefaultTableCellRenderer hr = new DefaultTableCellRenderer();
         hr.setBackground(Theme.SIDEBAR);
         hr.setForeground(Theme.TEXT);
+
         for (int i = 0; i < t.getColumnModel().getColumnCount(); i++) {
             t.getColumnModel().getColumn(i).setHeaderRenderer(hr);
         }

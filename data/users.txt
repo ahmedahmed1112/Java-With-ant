@@ -1,5 +1,5 @@
 A001|admin|1234|Khaled|Male|khaled@admin.com|1160535394|21|ADMIN
-L001|sara|1111|Sara|Female|sara@leader.com|1160535395|33|LEADER
+L001|saad|saad|1112|LEADER
 L002|omar|2222|Omar|Male|omar@leader.com|1160535392|43|LEADER
 T001|ali|3333|Ali|Male|ali@leader.com|1160535396|32|LECTURER
 T002|nora|4444|Nora||||0|LECTURER
