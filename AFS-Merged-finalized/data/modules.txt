@@ -1,0 +1,9 @@
+M001|Object Oriented Development with Java|CT038-3-2-OODJ|4|L001|T001
+M002|Database Systems|CT077-3-2-DBSY|4|L001|T002
+M003|Software Engineering|CT078-3-2-SENG|3|L002|T003
+M004|Data Structures and Algorithms|CT055-3-2-DSA|4|L001|T004
+M005|Computer Networks|CT060-3-2-CNET|4|L002|T005
+M006|Web Application Development|CT057-3-2-WAPP|4|L002|T006
+M007|Operating Systems|CT061-3-2-OSYS|4|L003|T007
+M008|Cybersecurity Fundamentals|CT062-3-2-CYBF|3|L003|T008
+M009|Human Computer Interaction|CT063-3-2-HCI|3|L003|T009

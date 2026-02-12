@@ -1,0 +1,17 @@
+A001|admin|1234|Khaled|Male|khaled@admin.com|1160535394|21|ADMIN
+L001|saad|saad|Saad Rahman|Male|saad@leader.apu.edu.my|0161111111|38|LEADER
+L002|omar|2222|Omar Hadi|Male|omar@leader.apu.edu.my|0162222222|43|LEADER
+L003|lina|lina123|Lina Farah|Female|lina@leader.apu.edu.my|0163333333|36|LEADER
+T001|lecturer01|pass123|Dr. Ahmad Nasser|Male|ahmad@apu.edu.my|0123456789|35|LECTURER
+T002|lecturer02|pass456|Dr. Sarah Lee|Female|sarah@apu.edu.my|0198765432|40|LECTURER
+T003|lecturer03|pass789|Prof. John Smith|Male|john@apu.edu.my|0112233445|45|LECTURER
+T004|lecturer04|pass234|Dr. Mei Ling|Female|meiling@apu.edu.my|0182345678|37|LECTURER
+T005|lecturer05|pass345|Dr. Daniel Wong|Male|danielw@apu.edu.my|0173456789|41|LECTURER
+T006|lecturer06|pass567|Dr. Noraini Yusuf|Female|noraini@apu.edu.my|0164567890|39|LECTURER
+T007|lecturer07|pass678|Dr. Imran Khalid|Male|imran@apu.edu.my|0155678901|42|LECTURER
+T008|lecturer08|pass890|Dr. Aisha Karim|Female|aisha@apu.edu.my|0146789012|34|LECTURER
+T009|lecturer09|pass901|Prof. Michael Tan|Male|michaelt@apu.edu.my|0137890123|46|LECTURER
+S001|student01|stud123|Ahmad Ali|Male|ali@student.apu.edu.my|0111234567|20|STUDENT
+S002|student02|stud456|Sarah Tan|Female|sarah.tan@student.apu.edu.my|0129876543|21|STUDENT
+S003|student03|stud789|John Doe|Male|john@student.apu.edu.my|0137654321|20|STUDENT
+S004|student04|stud012|Maria Garcia|Female|maria@student.apu.edu.my|0145678901|22|STUDENT

@@ -1,0 +1,4 @@
+ASS001|M001|Assignment 1|Assignment|100.0|30.0|lecturer01
+ASS002|M001|Midterm Exam|Test|100.0|30.0|lecturer01
+ASS003|M001|Final Project|Project|100.0|40.0|lecturer01
+ASS1770929385417|M002|test|Assignment|100.0|100.0|lecturer02
