@@ -2,6 +2,8 @@ package service;
 
 import model.LeaderLecturerAssignment;
 import model.Module;
+import model.User;
+import util.Constants;
 import util.FileManager;
 
 import java.util.*;
@@ -13,14 +15,19 @@ import java.util.*;
  * Format:
  * moduleId|moduleName|moduleCode|creditHours|leaderId|lecturerId
  *
- * Constraints:
- * - Max 3 modules per leader
- * - Max 3 lecturers per leader (based on leader_lecturer.txt)
+ * FIX (Lecturer-Student bug chain):
+ * - When a leader assigns a lecturer to a module, modules.txt is updated,
+ *   BUT lecturers.txt was not updated, so the Lecturer UI can't see the module.
+ * - Now we sync lecturers.txt whenever assignment/unassignment happens.
  */
 public class ModuleService {
 
-    private static final String MODULES_FILE = "data/modules.txt";
-    private static final String LEADER_LECTURER_FILE = "data/leader_lecturer.txt";
+    private static final String MODULES_FILE = Constants.MODULES_FILE;
+    private static final String LEADER_LECTURER_FILE = "data/leader_lecturer.txt"; // no constant in Constants.java
+
+    // lecturers.txt schema:
+    // username|password|name|gender|email|phone|age|assignedModuleId|academicLeaderId
+    private static final String LECTURERS_FILE = Constants.LECTURERS_FILE;
 
     // --------------------------
     // Reads
@@ -74,12 +81,10 @@ public class ModuleService {
         if (moduleCode.isEmpty()) throw new IllegalArgumentException("Module code is required.");
         if (creditHours <= 0) throw new IllegalArgumentException("Credit hours must be a positive number.");
 
-        // Max 3 modules per leader
         if (getByLeader(leaderId).size() >= 3) {
             throw new IllegalArgumentException("Max 3 modules per leader. You already reached the limit.");
         }
 
-        // Unique moduleCode
         for (Module m : getAll()) {
             if (moduleCode.equalsIgnoreCase(safe(m.getModuleCode()))) {
                 throw new IllegalArgumentException("Module code already exists: " + moduleCode);
@@ -89,7 +94,6 @@ public class ModuleService {
         String newId = generateNextModuleId();
         Module created = new Module(newId, moduleName, moduleCode, creditHours, leaderId, "");
 
-        // use your FileManager.append
         FileManager.append(MODULES_FILE, created.toFileLine());
         return created;
     }
@@ -109,12 +113,10 @@ public class ModuleService {
         Module existing = findById(moduleId);
         if (existing == null) throw new IllegalArgumentException("Module not found: " + moduleId);
 
-        // Leader can only edit their own modules
         if (!leaderId.equalsIgnoreCase(safe(existing.getLeaderId()))) {
             throw new IllegalArgumentException("You are not allowed to update a module owned by another leader.");
         }
 
-        // Unique moduleCode (excluding itself)
         for (Module m : getAll()) {
             if (moduleId.equalsIgnoreCase(safe(m.getModuleId()))) continue;
             if (newCode.equalsIgnoreCase(safe(m.getModuleCode()))) {
@@ -126,7 +128,6 @@ public class ModuleService {
         existing.setModuleCode(newCode);
         existing.setCreditHours(newCreditHours);
 
-        // use your FileManager.updateById (first column is moduleId)
         FileManager.updateById(MODULES_FILE, moduleId, existing.toFileLine());
     }
 
@@ -144,7 +145,12 @@ public class ModuleService {
             throw new IllegalArgumentException("You are not allowed to delete a module owned by another leader.");
         }
 
-        // use your FileManager.deleteById
+        // If this module had a lecturer assigned, clear the lecturer's assignedModuleId too.
+        String lecId = safe(existing.getLecturerId());
+        if (!lecId.isEmpty()) {
+            syncLecturerAssignment(lecId, "", "");
+        }
+
         FileManager.deleteById(MODULES_FILE, moduleId);
     }
 
@@ -170,18 +176,20 @@ public class ModuleService {
 
         Set<String> allowedLecturers = getAllowedLecturersForLeader(leaderId);
 
-        // Enforce max 3 lecturers per leader (based on leader_lecturer.txt)
         if (allowedLecturers.size() > 3) {
             throw new IllegalArgumentException("Max 3 lecturers per leader exceeded in leader_lecturer.txt. Fix admin assignment first.");
         }
 
-        // Lecturer must be under this leader
         if (!allowedLecturers.contains(lecturerId.toUpperCase())) {
             throw new IllegalArgumentException("This lecturer is not assigned to you (Leader) in leader_lecturer.txt.");
         }
 
+        // 1) Update modules.txt (existing behavior)
         m.setLecturerId(lecturerId);
         FileManager.updateById(MODULES_FILE, moduleId, m.toFileLine());
+
+        // 2) NEW: Sync lecturers.txt so Lecturer dashboard can see the module
+        syncLecturerAssignment(lecturerId, moduleId, leaderId);
     }
 
     public static void unassignLecturerFromModule(String leaderId, String moduleId) {
@@ -198,8 +206,69 @@ public class ModuleService {
             throw new IllegalArgumentException("You are not allowed to unassign lecturers for another leader's module.");
         }
 
+        String oldLecturerId = safe(m.getLecturerId());
+
         m.setLecturerId("");
         FileManager.updateById(MODULES_FILE, moduleId, m.toFileLine());
+
+        // NEW: also clear lecturers.txt assignment
+        if (!oldLecturerId.isEmpty()) {
+            syncLecturerAssignment(oldLecturerId, "", "");
+        }
+    }
+
+    /**
+     * Sync the lecturer's record in lecturers.txt with assignedModuleId + academicLeaderId.
+     * - lecturerId is like T001
+     * - lecturers.txt is keyed by username (lecturer01), so we map lecturerId -> username from users.txt.
+     */
+    private static void syncLecturerAssignment(String lecturerId, String moduleId, String leaderId) {
+        lecturerId = safe(lecturerId);
+        moduleId = safe(moduleId);
+        leaderId = safe(leaderId);
+        if (lecturerId.isEmpty()) return;
+
+        // Map lecturerId (T001) -> username (lecturer01)
+        UserService userService = new UserService();
+        User u = userService.getById(lecturerId);
+        if (u == null || u.getUsername() == null || u.getUsername().trim().isEmpty()) {
+            return; // no matching user in users.txt
+        }
+        String usernameKey = u.getUsername().trim();
+
+        List<String> lines = FileManager.readAll(LECTURERS_FILE);
+        List<String> out = new ArrayList<>();
+
+        boolean updated = false;
+
+        for (String line : lines) {
+            if (line == null || line.trim().isEmpty()) continue;
+
+            String[] p = line.split("\\|", -1);
+            // expected 9 fields in lecturers.txt
+            if (p.length < 9) {
+                out.add(line);
+                continue;
+            }
+
+            String username = p[0].trim();
+            if (!username.equalsIgnoreCase(usernameKey)) {
+                out.add(line);
+                continue;
+            }
+
+            // Update assignedModuleId + academicLeaderId only
+            p[7] = moduleId; // assigned module
+            p[8] = leaderId; // leader in charge
+
+            out.add(String.join("|", p));
+            updated = true;
+        }
+
+        // If lecturer doesn't exist in lecturers.txt, do not auto-create (avoid changing structure silently).
+        if (updated) {
+            FileManager.writeAll(LECTURERS_FILE, out);
+        }
     }
 
     // --------------------------
@@ -215,7 +284,6 @@ public class ModuleService {
             String t = line.trim();
             if (t.isEmpty()) continue;
 
-            // If someone accidentally added a header line, skip it safely
             if (t.toLowerCase().startsWith("leaderid")) continue;
 
             LeaderLecturerAssignment a = parseLeaderLecturerLine(t);

@@ -1,6 +1,8 @@
 package ui;
 
 import java.awt.*;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import model.User;
@@ -9,18 +11,15 @@ public class AdminDashboard extends JFrame {
 
     private final User adminUser;
 
-    // Center content switching
     private final CardLayout centerLayout = new CardLayout();
     private final JPanel centerCards = new JPanel(centerLayout);
 
-    // Card names
     private static final String CARD_HOME = "home";
     private static final String CARD_USERS = "users";
     private static final String CARD_CLASSES = "classes";
     private static final String CARD_GRADING = "grading";
     private static final String CARD_ASSIGN = "assign";
 
-    // Center title
     private JLabel pageTitle;
     private JLabel pageSub;
 
@@ -30,7 +29,13 @@ public class AdminDashboard extends JFrame {
         setTitle("AFS Admin Dashboard");
         setSize(1020, 620);
         setLocationRelativeTo(null);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                new LoginFrame().setVisible(true);
+            }
+        });
 
         JPanel root = new JPanel(new BorderLayout());
         root.setBackground(Theme.BG);
@@ -59,16 +64,13 @@ public class AdminDashboard extends JFrame {
         nav.setOpaque(false);
         nav.setBorder(new EmptyBorder(18, 0, 18, 0));
 
-        // ✅ NEW: Dashboard button (first)
-        JButton btnDashboard = UIUtils.ghostButton("🏠  Dashboard");
-
-        JButton btnUsers = UIUtils.ghostButton("👤  Manage Users");
-        JButton btnClasses = UIUtils.ghostButton("🏫  Manage Classes");
-        JButton btnGrading = UIUtils.ghostButton("🧮  Manage Grading");
-        JButton btnAssign = UIUtils.ghostButton("🔗  Assign Lecturers");
+        JButton btnDashboard = UIUtils.ghostButton("Dashboard");
+        JButton btnUsers = UIUtils.ghostButton("Manage Users");
+        JButton btnClasses = UIUtils.ghostButton("Manage Classes");
+        JButton btnGrading = UIUtils.ghostButton("Manage Grading");
+        JButton btnAssign = UIUtils.ghostButton("Assign Lecturers");
         JButton btnLogout = UIUtils.dangerButton("Logout");
 
-        // Add buttons (Dashboard first)
         nav.add(btnDashboard);
         nav.add(btnUsers);
         nav.add(btnClasses);
@@ -100,18 +102,14 @@ public class AdminDashboard extends JFrame {
         titles.add(pageTitle);
         titles.add(pageSub);
 
-        // ✅ REMOVED: quickAssign button on the right
         topbar.add(titles, BorderLayout.WEST);
 
         contentWrapper.add(topbar, BorderLayout.NORTH);
 
-        // ===== Center Cards (switchable area) =====
+        // ===== Center Cards =====
         centerCards.setOpaque(false);
 
-        // Home screen (your dashboard cards)
         JPanel homePanel = buildHomePanel();
-
-        // These are now JPanels (we converted them)
         JPanel usersPanel = new ManageUsersFrame();
         JPanel classesPanel = new ManageClassesFrame();
         JPanel gradingPanel = new ManageGradingFrame();
@@ -125,39 +123,14 @@ public class AdminDashboard extends JFrame {
 
         contentWrapper.add(centerCards, BorderLayout.CENTER);
 
-        // Start at home
         showCenter(CARD_HOME, "Dashboard", "Choose an admin task from the sidebar");
 
         // ===== Actions =====
-        btnDashboard.addActionListener(e -> showCenter(
-                CARD_HOME,
-                "Dashboard",
-                "Choose an admin task from the sidebar"
-        ));
-
-        btnUsers.addActionListener(e -> showCenter(
-                CARD_USERS,
-                "Manage Users",
-                "Create / update / delete users (users.txt)"
-        ));
-
-        btnClasses.addActionListener(e -> showCenter(
-                CARD_CLASSES,
-                "Manage Classes",
-                "Manage classes for modules (classes.txt)"
-        ));
-
-        btnGrading.addActionListener(e -> showCenter(
-                CARD_GRADING,
-                "Manage Grading",
-                "Define grading rules (grading.txt)"
-        ));
-
-        btnAssign.addActionListener(e -> showCenter(
-                CARD_ASSIGN,
-                "Assign Lecturers",
-                "Assign Lecturer to Academic Leader (leader_lecturer.txt)"
-        ));
+        btnDashboard.addActionListener(e -> showCenter(CARD_HOME, "Dashboard", "Choose an admin task from the sidebar"));
+        btnUsers.addActionListener(e -> showCenter(CARD_USERS, "Manage Users", "Create / update / delete users (users.txt)"));
+        btnClasses.addActionListener(e -> showCenter(CARD_CLASSES, "Manage Classes", "Manage classes for modules (classes.txt)"));
+        btnGrading.addActionListener(e -> showCenter(CARD_GRADING, "Manage Grading", "Define grading rules (grading.txt)"));
+        btnAssign.addActionListener(e -> showCenter(CARD_ASSIGN, "Assign Lecturers", "Assign Lecturer to Academic Leader (leader_lecturer.txt)"));
 
         btnLogout.addActionListener(e -> {
             new LoginFrame().setVisible(true);
@@ -180,33 +153,14 @@ public class AdminDashboard extends JFrame {
         JPanel grid = new JPanel(new GridLayout(2, 2, 14, 14));
         grid.setOpaque(false);
 
-        grid.add(statCard(
-                "Users",
-                "Create / update / delete users (users.txt)",
-                "Open Users",
-                () -> showCenter(CARD_USERS, "Manage Users", "Create / update / delete users (users.txt)")
-        ));
-
-        grid.add(statCard(
-                "Classes",
-                "Manage classes for modules (classes.txt)",
-                "Open Classes",
-                () -> showCenter(CARD_CLASSES, "Manage Classes", "Manage classes for modules (classes.txt)")
-        ));
-
-        grid.add(statCard(
-                "Grading",
-                "Define grading rules (grading.txt)",
-                "Open Grading",
-                () -> showCenter(CARD_GRADING, "Manage Grading", "Define grading rules (grading.txt)")
-        ));
-
-        grid.add(statCard(
-                "Assign Lecturers",
-                "Assign Lecturer to Academic Leader (leader_lecturer.txt)",
-                "Open Assign",
-                () -> showCenter(CARD_ASSIGN, "Assign Lecturers", "Assign Lecturer to Academic Leader (leader_lecturer.txt)")
-        ));
+        grid.add(statCard("Users", "Create / update / delete users (users.txt)", "Open Users",
+                () -> showCenter(CARD_USERS, "Manage Users", "Create / update / delete users (users.txt)")));
+        grid.add(statCard("Classes", "Manage classes for modules (classes.txt)", "Open Classes",
+                () -> showCenter(CARD_CLASSES, "Manage Classes", "Manage classes for modules (classes.txt)")));
+        grid.add(statCard("Grading", "Define grading rules (grading.txt)", "Open Grading",
+                () -> showCenter(CARD_GRADING, "Manage Grading", "Define grading rules (grading.txt)")));
+        grid.add(statCard("Assign Lecturers", "Assign Lecturer to Academic Leader (leader_lecturer.txt)", "Open Assign",
+                () -> showCenter(CARD_ASSIGN, "Assign Lecturers", "Assign Lecturer to Academic Leader (leader_lecturer.txt)")));
 
         wrapper.add(grid, BorderLayout.CENTER);
         return wrapper;

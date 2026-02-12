@@ -11,4 +11,9 @@ public class AdminStaff extends User {
     public AdminStaff(String userId, String name, String username, String password) {
         super(userId, name, username, password, "ADMIN");
     }
+
+    @Override
+    public void editProfile() {
+        // Admin profile editing handled by UI
+    }
 }

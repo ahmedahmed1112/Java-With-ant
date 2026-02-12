@@ -1,0 +1,4 @@
+student01|stud123|Ahmad Ali|Male|ali@student.apu.edu.my|0111234567|20|TP012345|APU2F2301CS|MOD001
+student02|stud456|Sarah Tan|Female|sarah.tan@student.apu.edu.my|0129876543|21|TP012346|APU2F2301CS|MOD001
+student03|stud789|John Doe|Male|john@student.apu.edu.my|0137654321|20|TP012347|APU2F2301CS|MOD001
+student04|stud012|Maria Garcia|Female|maria@student.apu.edu.my|0145678901|22|TP012348|APU2F2301CS|MOD001

@@ -87,11 +87,7 @@ public class LoginFrame extends JFrame {
             return;
         }
 
-        System.out.println("Trying login: " + username + " / " + password);
-
         User user = AuthService.login(username, password);
-
-        System.out.println("Result user = " + (user == null ? "null" : (user.getUserId() + " " + user.getRole())));
 
         if (user == null) {
             JOptionPane.showMessageDialog(this, "Invalid username or password.");
@@ -116,12 +112,12 @@ public class LoginFrame extends JFrame {
                 break;
 
             case "LECTURER":
-                new LecturerDashboardFrame().setVisible(true);
+                new LecturerDashboardFrame(user).setVisible(true);
                 dispose();
                 break;
 
             case "STUDENT":
-                new StudentDashboardFrame().setVisible(true);
+                new StudentDashboardFrame(user).setVisible(true);
                 dispose();
                 break;
 

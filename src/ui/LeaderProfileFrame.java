@@ -7,22 +7,6 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
 
-/**
- * LeaderProfileFrame
- * ------------------
- * Academic Leader feature: Edit personal / individual profile (users.txt)
- *
- * File format (keep 5 fields only):
- * userId|name|username|password|role
- *
- * UI Updates:
- * - Scrollable (can go up/down)
- * - Can be embedded inside LeaderDashboard (right-side swap)
- * - Show/Hide password button (styled like the rest using UIUtils)
- *
- * Logic kept:
- * - Updates line in users.txt using FileManager.updateById(...)
- */
 public class LeaderProfileFrame extends JFrame {
 
     private static final String USERS_FILE = "data/users.txt";
@@ -32,14 +16,16 @@ public class LeaderProfileFrame extends JFrame {
 
     private JTextField txtUserId;
     private JTextField txtRole;
-
     private JTextField txtName;
     private JTextField txtUsername;
     private JPasswordField txtPassword;
+    private JTextField txtGender;
+    private JTextField txtEmail;
+    private JTextField txtPhone;
+    private JTextField txtAge;
 
     private char defaultEcho;
 
-    // Embedded support
     private final boolean embedded;
     private final Runnable onBackToDashboard;
     private JPanel mainPanel;
@@ -48,10 +34,8 @@ public class LeaderProfileFrame extends JFrame {
         this(null);
     }
 
-    // Standalone constructor (old behavior)
     public LeaderProfileFrame(User user) {
         this(user, false, null);
-
         setTitle("Edit Profile (Leader)");
         setSize(820, 520);
         setLocationRelativeTo(null);
@@ -59,7 +43,6 @@ public class LeaderProfileFrame extends JFrame {
         setContentPane(mainPanel);
     }
 
-    // Embedded constructor (new behavior)
     public LeaderProfileFrame(User user, boolean embedded, Runnable onBackToDashboard) {
         this.loggedInUser = user;
         this.embedded = embedded;
@@ -71,12 +54,10 @@ public class LeaderProfileFrame extends JFrame {
         if (loggedInUser == null || loggedInUser.getUserId() == null || loggedInUser.getUserId().trim().isEmpty()) {
             JOptionPane.showMessageDialog(embedded ? mainPanel : this,
                     "No logged-in Leader was provided.\nPlease login again and open Profile from the dashboard.",
-                    "Missing User",
-                    JOptionPane.WARNING_MESSAGE);
+                    "Missing User", JOptionPane.WARNING_MESSAGE);
         }
     }
 
-    // For embedding into the dashboard right side
     public JPanel getMainPanel() {
         return mainPanel;
     }
@@ -87,24 +68,18 @@ public class LeaderProfileFrame extends JFrame {
         root.setBorder(new EmptyBorder(18, 18, 18, 18));
         this.mainPanel = root;
 
-        // ===== Top bar =====
         JPanel top = new JPanel(new BorderLayout());
         top.setOpaque(false);
         top.setBorder(new EmptyBorder(0, 0, 14, 0));
 
         JPanel titles = new JPanel(new GridLayout(2, 1));
         titles.setOpaque(false);
-
-        JLabel title = UIUtils.title("Profile");
-        JLabel sub = UIUtils.muted("Update your own details (users.txt)");
-
-        titles.add(title);
-        titles.add(sub);
+        titles.add(UIUtils.title("Profile"));
+        titles.add(UIUtils.muted("Update your own details (users.txt)"));
 
         top.add(titles, BorderLayout.WEST);
         root.add(top, BorderLayout.NORTH);
 
-        // ===== Scrollable content =====
         JPanel scrollContent = new JPanel(new BorderLayout());
         scrollContent.setOpaque(false);
 
@@ -121,7 +96,6 @@ public class LeaderProfileFrame extends JFrame {
 
         root.add(sp, BorderLayout.CENTER);
 
-        // ===== Form =====
         JPanel form = new JPanel(new GridBagLayout());
         form.setOpaque(false);
         form.setBorder(new EmptyBorder(6, 0, 10, 0));
@@ -133,7 +107,6 @@ public class LeaderProfileFrame extends JFrame {
         gbc.weightx = 1.0;
         gbc.insets = new Insets(0, 0, 14, 0);
 
-        // Read-only fields
         txtUserId = UIUtils.modernTextField();
         makeFieldTaller(txtUserId);
         txtUserId.setEditable(false);
@@ -142,7 +115,6 @@ public class LeaderProfileFrame extends JFrame {
         makeFieldTaller(txtRole);
         txtRole.setEditable(false);
 
-        // Editable fields
         txtName = UIUtils.modernTextField();
         makeFieldTaller(txtName);
 
@@ -152,15 +124,24 @@ public class LeaderProfileFrame extends JFrame {
         txtPassword = UIUtils.modernPasswordField();
         makeFieldTaller(txtPassword);
 
-        // capture the original echo char once
+        txtGender = UIUtils.modernTextField();
+        makeFieldTaller(txtGender);
+
+        txtEmail = UIUtils.modernTextField();
+        makeFieldTaller(txtEmail);
+
+        txtPhone = UIUtils.modernTextField();
+        makeFieldTaller(txtPhone);
+
+        txtAge = UIUtils.modernTextField();
+        makeFieldTaller(txtAge);
+
         defaultEcho = txtPassword.getEchoChar();
 
-        // ===== Password row with Show/Hide button on the right =====
         JPanel passwordRow = new JPanel(new BorderLayout(10, 0));
         passwordRow.setOpaque(false);
         passwordRow.add(txtPassword, BorderLayout.CENTER);
 
-        // ✅ Styled button matching theme (NO toggleShow variable)
         JButton btnShowHide = UIUtils.ghostButton("Show");
         btnShowHide.setPreferredSize(new Dimension(100, FIELD_HEIGHT));
         btnShowHide.setFont(UIUtils.font(12, Font.BOLD));
@@ -168,7 +149,6 @@ public class LeaderProfileFrame extends JFrame {
 
         btnShowHide.addActionListener(e -> {
             boolean hiddenNow = txtPassword.getEchoChar() != (char) 0;
-
             if (hiddenNow) {
                 txtPassword.setEchoChar((char) 0);
                 btnShowHide.setText("Hide");
@@ -185,8 +165,11 @@ public class LeaderProfileFrame extends JFrame {
         gbc.gridy = 2; form.add(labeled("Full Name", txtName), gbc);
         gbc.gridy = 3; form.add(labeled("Username", txtUsername), gbc);
         gbc.gridy = 4; form.add(labeled("Password", passwordRow), gbc);
+        gbc.gridy = 5; form.add(labeled("Gender", txtGender), gbc);
+        gbc.gridy = 6; form.add(labeled("Email", txtEmail), gbc);
+        gbc.gridy = 7; form.add(labeled("Phone", txtPhone), gbc);
+        gbc.gridy = 8; form.add(labeled("Age", txtAge), gbc);
 
-        // ===== Actions =====
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         actions.setOpaque(false);
 
@@ -202,7 +185,6 @@ public class LeaderProfileFrame extends JFrame {
             }
         });
 
-        // If user missing, disable save
         if (loggedInUser == null || loggedInUser.getUserId() == null || loggedInUser.getUserId().trim().isEmpty()) {
             btnSave.setEnabled(false);
         }
@@ -218,21 +200,28 @@ public class LeaderProfileFrame extends JFrame {
 
         txtUserId.setText(safe(loggedInUser.getUserId()));
         txtRole.setText(safe(loggedInUser.getRole()));
-
         txtName.setText(safe(loggedInUser.getName()));
         txtUsername.setText(safe(loggedInUser.getUsername()));
         txtPassword.setText(safe(loggedInUser.getPassword()));
+        txtGender.setText(safe(loggedInUser.getGender()));
+        txtEmail.setText(safe(loggedInUser.getEmail()));
+        txtPhone.setText(safe(loggedInUser.getPhone()));
+        txtAge.setText(loggedInUser.getAge() > 0 ? String.valueOf(loggedInUser.getAge()) : "");
     }
 
     private void saveProfile() {
         if (loggedInUser == null) return;
 
         String userId = safe(loggedInUser.getUserId()).trim();
-        String role = safe(loggedInUser.getRole()).trim(); // keep as-is (read-only)
+        String role = safe(loggedInUser.getRole()).trim();
 
         String name = txtName.getText() == null ? "" : txtName.getText().trim();
         String username = txtUsername.getText() == null ? "" : txtUsername.getText().trim();
         String password = new String(txtPassword.getPassword()).trim();
+        String gender = txtGender.getText() == null ? "" : txtGender.getText().trim();
+        String email = txtEmail.getText() == null ? "" : txtEmail.getText().trim();
+        String phone = txtPhone.getText() == null ? "" : txtPhone.getText().trim();
+        String ageText = txtAge.getText() == null ? "" : txtAge.getText().trim();
 
         if (name.isEmpty()) {
             JOptionPane.showMessageDialog(embedded ? mainPanel : this,
@@ -250,21 +239,31 @@ public class LeaderProfileFrame extends JFrame {
             return;
         }
 
-        // Keep exact 5 fields only
-        String newLine = userId + "|" + name + "|" + username + "|" + password + "|" + role;
+        int age = 0;
+        if (!ageText.isEmpty()) {
+            try { age = Integer.parseInt(ageText); } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(embedded ? mainPanel : this,
+                        "Age must be a number.", "Validation", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+        }
 
-        // Update file by id (first column)
+        // Save full 9-field format: userId|username|password|name|gender|email|phone|age|role
+        String newLine = userId + "|" + username + "|" + password + "|" + name + "|"
+                + gender + "|" + email + "|" + phone + "|" + age + "|" + role;
+
         FileManager.updateById(USERS_FILE, userId, newLine);
 
-        // Update in-memory object too
         loggedInUser.setName(name);
         loggedInUser.setUsername(username);
         loggedInUser.setPassword(password);
+        loggedInUser.setGender(gender);
+        loggedInUser.setEmail(email);
+        loggedInUser.setPhone(phone);
+        loggedInUser.setAge(age);
 
         JOptionPane.showMessageDialog(embedded ? mainPanel : this,
-                "Profile updated successfully.",
-                "Saved",
-                JOptionPane.INFORMATION_MESSAGE);
+                "Profile updated successfully.", "Saved", JOptionPane.INFORMATION_MESSAGE);
     }
 
     private JPanel labeled(String label, JComponent field) {

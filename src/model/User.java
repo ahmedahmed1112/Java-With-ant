@@ -1,6 +1,6 @@
 package model;
 
-public class User {
+public abstract class User {
 
     // ===== Attributes =====
     protected String userId;
@@ -14,8 +14,10 @@ public class User {
     protected String role;
 
     // ===== Constructors =====
-    // New schema constructor
-    public User(String userId, String username, String password, String name,
+    protected User() {}
+
+    // Full 9-param constructor (master schema)
+    protected User(String userId, String username, String password, String name,
                 String gender, String email, String phone, int age, String role) {
         this.userId = userId;
         this.username = username;
@@ -28,9 +30,62 @@ public class User {
         this.role = role;
     }
 
-    // Backward-compatible constructor (old schema)
-    public User(String userId, String name, String username, String password, String role) {
+    // Backward-compatible constructor (old schema: id|name|username|password|role)
+    protected User(String userId, String name, String username, String password, String role) {
         this(userId, username, password, name, "", "", "", 0, role);
+    }
+
+    // 3-param constructor for Abdalla's subclasses
+    protected User(String username, String password, String name) {
+        this("", username, password, name, "", "", "", 0, "");
+    }
+
+    // 7-param constructor for Abdalla's subclasses
+    protected User(String username, String password, String name, String gender,
+                   String email, String phone, int age) {
+        this("", username, password, name, gender, email, phone, age, "");
+    }
+
+    // ===== Abstract method (OOP requirement) =====
+    public abstract void editProfile();
+
+    // ===== Static factory =====
+    public static User create(String userId, String username, String password, String name,
+                              String gender, String email, String phone, int age, String role) {
+        String r = (role == null) ? "" : role.trim().toUpperCase();
+        switch (r) {
+            case "ADMIN":
+                return new AdminStaff(userId, username, password, name, gender, email, phone, age);
+            case "LEADER":
+                return new AcademicLeader(userId, username, password, name, gender, email, phone, age);
+            case "LECTURER":
+                Lecturer lec = new Lecturer();
+                lec.setUserId(userId);
+                lec.setUsername(username);
+                lec.setPassword(password);
+                lec.setName(name);
+                lec.setGender(gender);
+                lec.setEmail(email);
+                lec.setPhone(phone);
+                lec.setAge(age);
+                lec.setRole("LECTURER");
+                return lec;
+            case "STUDENT":
+                Student stu = new Student();
+                stu.setUserId(userId);
+                stu.setUsername(username);
+                stu.setPassword(password);
+                stu.setName(name);
+                stu.setGender(gender);
+                stu.setEmail(email);
+                stu.setPhone(phone);
+                stu.setAge(age);
+                stu.setRole("STUDENT");
+                return stu;
+            default:
+                // Fallback: return AcademicLeader as generic
+                return new AcademicLeader(userId, username, password, name, gender, email, phone, age, r);
+        }
     }
 
     // ===== Getters & Setters =====
@@ -60,6 +115,10 @@ public class User {
 
     public String getRole() { return role; }
     public void setRole(String role) { this.role = role; }
+
+    public boolean login(String inputPassword) {
+        return password != null && password.equals(inputPassword);
+    }
 
     // ===== Utility =====
     @Override

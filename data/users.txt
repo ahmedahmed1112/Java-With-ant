@@ -1,5 +1,13 @@
 A001|admin|1234|Khaled|Male|khaled@admin.com|1160535394|21|ADMIN
-L001|saad|saad|2222|LEADER
-L002|omar|2222|Omar|Male|omar@leader.com|1160535392|43|LEADER
-T001|ali|3333|Ali|Male|ali@leader.com|1160535396|32|LECTURER
-T002|nora|4444|Nora|Female|||23|LECTURER
+L001|saad|saad|Saad|Male|saad@leader.com||19|LEADER
+L002|Ali|2222|Ali|Male|Ali@leader.com|1160535392|43|LEADER
+T001|lecturer01|pass123|Dr. Ahmad|Male|ahmad@apu.edu.my|0123456789|35|LECTURER
+T002|lecturer02|pass456|Dr. Sarah Lee|Female|sarah@apu.edu.my|0198765432|40|LECTURER
+S001|student01|stud123|Ahmad Ali|Male|ali@student.apu.edu.my|0111234567|20|STUDENT
+S002|student02|stud456|Sarah Tan|Female|sarah.tan@student.apu.edu.my|0129876543|21|STUDENT
+S003|student03|stud789|John Doe|Male|john@student.apu.edu.my|0137654321|20|STUDENT
+S004|student04|stud012|Maria Garcia|Female|maria@student.apu.edu.my|0145678901|22|STUDENT
+T003|Shahab|1234|Shahab|Male|Shahab@lecturer.com|01654892879|41|LECTURER
+T004|Kiat|123|Kiat|Male|Kiat@Lecturer.com|0123654987|46|LECTURER
+T005|Tan Li|123|Tan Li|Male|Tan@lecturer.com|013245687|32|LECTURER
+T006|Alyaa|123|Alyaa|Male|Alyaa@lecturer.com|0113255879|34|LECTURER

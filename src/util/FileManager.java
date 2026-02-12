@@ -9,35 +9,41 @@ public class FileManager {
     public static List<String> readAll(String filePath) {
         List<String> lines = new ArrayList<>();
         File file = new File(filePath);
-
         if (!file.exists()) return lines;
 
-        try (BufferedReader br = new BufferedReader(new FileReader(file))) {
+        BufferedReader br = null;
+        try {
+            br = new BufferedReader(new FileReader(file));
             String line;
             while ((line = br.readLine()) != null) {
                 lines.add(line);
             }
         } catch (Exception e) {
             e.printStackTrace();
+        } finally {
+            if (br != null) {
+                try { br.close(); } catch (IOException ignored) {}
+            }
         }
         return lines;
     }
 
     public static void append(String filePath, String line) {
+        PrintWriter pw = null;
         try {
             File file = new File(filePath);
             file.getParentFile().mkdirs();
-
-            try (BufferedWriter bw = new BufferedWriter(new FileWriter(file, true))) {
-                bw.write(line);
-                bw.newLine();
-            }
+            pw = new PrintWriter(new FileWriter(file, true));
+            pw.println(line);
         } catch (Exception e) {
             e.printStackTrace();
+        } finally {
+            if (pw != null) {
+                pw.close();
+            }
         }
     }
 
-    // Update line where first column equals idKey (idKey|...)
     public static void updateById(String filePath, String idKey, String newLine) {
         List<String> lines = readAll(filePath);
         List<String> out = new ArrayList<>();
@@ -58,7 +64,6 @@ public class FileManager {
         writeAll(filePath, out);
     }
 
-    // Delete line where first column equals idKey (idKey|...)
     public static void deleteById(String filePath, String idKey) {
         List<String> lines = readAll(filePath);
         List<String> out = new ArrayList<>();
@@ -77,20 +82,21 @@ public class FileManager {
         writeAll(filePath, out);
     }
 
-    // ✅ NEW: overwrite entire file with lines
     public static void writeAll(String filePath, List<String> lines) {
+        PrintWriter pw = null;
         try {
             File file = new File(filePath);
             file.getParentFile().mkdirs();
-
-            try (BufferedWriter bw = new BufferedWriter(new FileWriter(file, false))) {
-                for (String s : lines) {
-                    bw.write(s);
-                    bw.newLine();
-                }
+            pw = new PrintWriter(new FileWriter(file, false));
+            for (String s : lines) {
+                pw.println(s);
             }
         } catch (Exception e) {
             e.printStackTrace();
+        } finally {
+            if (pw != null) {
+                pw.close();
+            }
         }
     }
 }

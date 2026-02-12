@@ -56,12 +56,10 @@ public class ManageGradingFrame extends JPanel {
 
         JButton btnSearch = UIUtils.primaryButton("Search");
         JButton btnClearSearch = UIUtils.ghostButton("Clear");
-        JButton btnBack = UIUtils.ghostButton("Back");
 
         rightTop.add(txtSearch);
         rightTop.add(btnSearch);
         rightTop.add(btnClearSearch);
-        rightTop.add(btnBack);
 
         header.add(titles, BorderLayout.WEST);
         header.add(rightTop, BorderLayout.EAST);
@@ -97,10 +95,7 @@ public class ManageGradingFrame extends JPanel {
             refreshTable(allRules);
         });
 
-        btnBack.addActionListener(e ->
-                JOptionPane.showMessageDialog(this, "Use the sidebar to navigate.")
-        );
-
+       
         // load
         reload();
     }
@@ -222,16 +217,7 @@ public class ManageGradingFrame extends JPanel {
         };
 
         table = new JTable(tableModel);
-        table.setRowHeight(30);
-        table.setFont(UIUtils.font(13, Font.PLAIN));
-        table.setBackground(Theme.CARD);
-        table.setForeground(Theme.TEXT);
-        table.setGridColor(Theme.BORDER);
-        table.setSelectionBackground(new Color(40, 70, 140));
-        table.setSelectionForeground(Color.WHITE);
-
-        table.setDefaultRenderer(Object.class, gradingCellRenderer());
-        styleHeader(table.getTableHeader());
+        UIUtils.applyTableStyle(table);
 
         JScrollPane sp = new JScrollPane(table);
         UIUtils.styleScrollPane(sp);
@@ -242,48 +228,6 @@ public class ManageGradingFrame extends JPanel {
         return card;
     }
 
-    private TableCellRenderer gradingCellRenderer() {
-        return (tbl, value, isSelected, hasFocus, row, col) -> {
-            String text = value == null ? "" : value.toString();
-            JLabel cell = new JLabel(text);
-            cell.setOpaque(true);
-            cell.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 10));
-            cell.setFont(UIUtils.font(13, Font.BOLD));
-
-            if (isSelected) {
-                cell.setBackground(tbl.getSelectionBackground());
-                cell.setForeground(Color.WHITE);
-                return cell;
-            }
-
-            cell.setBackground(Theme.CARD);
-
-            if (col == 0) cell.setForeground(new Color(255, 210, 120));
-            else if (col == 1) cell.setForeground(new Color(120, 220, 200));
-            else if (col == 2) cell.setForeground(new Color(120, 180, 255));
-            else cell.setForeground(Theme.TEXT);
-
-            return cell;
-        };
-    }
-
-    private void styleHeader(JTableHeader header) {
-        header.setReorderingAllowed(false);
-        header.setResizingAllowed(false);
-
-        header.setDefaultRenderer((tbl, value, isSelected, hasFocus, row, col) -> {
-            String text = value == null ? "" : value.toString();
-            JLabel lbl = new JLabel(text, SwingConstants.LEFT);
-            lbl.setOpaque(true);
-            lbl.setBorder(BorderFactory.createEmptyBorder(8, 10, 8, 10));
-            lbl.setFont(UIUtils.font(13, Font.BOLD));
-
-            lbl.setBackground(new Color(30, 34, 42));
-            lbl.setForeground(Color.WHITE);
-
-            return lbl;
-        });
-    }
 
     private void reload() {
         allRules = GradingService.getAll();

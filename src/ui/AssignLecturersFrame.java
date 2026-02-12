@@ -100,11 +100,7 @@ public class AssignLecturersFrame extends JFrame {
         };
 
         table = new JTable(model);
-        table.setRowHeight(28);
-        table.setFillsViewportHeight(true);
-        table.setShowGrid(false);
-        table.setIntercellSpacing(new Dimension(0, 0));
-        styleTableToMatchDarkUI(table);
+        UIUtils.applyTableStyle(table);
 
         JScrollPane sp = new JScrollPane(table);
         UIUtils.styleScrollPane(sp);
@@ -454,24 +450,6 @@ public class AssignLecturersFrame extends JFrame {
         return p;
     }
 
-    private void styleTableToMatchDarkUI(JTable t) {
-        t.setBackground(Theme.BG);
-        t.setForeground(Theme.TEXT);
-        t.setSelectionBackground(Theme.PRIMARY);
-        t.setSelectionForeground(Color.WHITE);
-
-        JTableHeader h = t.getTableHeader();
-        h.setBackground(Theme.SIDEBAR);
-        h.setForeground(Theme.TEXT);
-
-        DefaultTableCellRenderer hr = new DefaultTableCellRenderer();
-        hr.setBackground(Theme.SIDEBAR);
-        hr.setForeground(Theme.TEXT);
-
-        for (int i = 0; i < t.getColumnModel().getColumnCount(); i++) {
-            t.getColumnModel().getColumn(i).setHeaderRenderer(hr);
-        }
-    }
 
     private void styleComboToMatchUI(JComboBox<String> combo) {
         combo.setBackground(Theme.BG);

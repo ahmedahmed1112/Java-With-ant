@@ -5,11 +5,6 @@ import model.LeaderLecturerAssignment;
 import java.io.*;
 import java.util.*;
 
-/**
- * leader_lecturer.txt format:
- * Header: LeaderID|LecturerID
- * Data:   LEADER_ID|LECTURER_ID
- */
 public class LeaderLecturerService {
 
     public enum AddResult {
@@ -21,7 +16,7 @@ public class LeaderLecturerService {
         IO_ERROR
     }
 
-    private static final String DEFAULT_PATH = "src/data/leader_lecturer.txt";
+    private static final String DEFAULT_PATH = "data/leader_lecturer.txt";
     private static final String DELIM = "|";
     private static final String SPLIT_REGEX = "\\|";
     private static final int MAX_LECTURERS_PER_LEADER = 3;
@@ -39,7 +34,6 @@ public class LeaderLecturerService {
 
     public List<LeaderLecturerAssignment> getAll() {
         List<LeaderLecturerAssignment> list = new ArrayList<>();
-
         File f = new File(filePath);
         if (!f.exists()) return list;
 
@@ -48,7 +42,6 @@ public class LeaderLecturerService {
             while ((line = br.readLine()) != null) {
                 line = line.trim();
                 if (line.isEmpty()) continue;
-
                 if (isHeaderLine(line)) continue;
 
                 String[] parts = line.split(SPLIT_REGEX);
@@ -56,14 +49,12 @@ public class LeaderLecturerService {
 
                 String leaderId = safe(parts[0]);
                 String lecturerId = safe(parts[1]);
-
                 if (leaderId.isEmpty() || lecturerId.isEmpty()) continue;
 
                 list.add(new LeaderLecturerAssignment(leaderId, lecturerId));
             }
         } catch (IOException ignored) {
         }
-
         return list;
     }
 
@@ -77,7 +68,6 @@ public class LeaderLecturerService {
 
         List<LeaderLecturerAssignment> list = getAll();
 
-        // Duplicate pair
         for (LeaderLecturerAssignment a : list) {
             if (leaderId.equalsIgnoreCase(safe(a.getLeaderId()))
                     && lecturerId.equalsIgnoreCase(safe(a.getLecturerId()))) {
@@ -85,7 +75,6 @@ public class LeaderLecturerService {
             }
         }
 
-        // Lecturer only one leader
         for (LeaderLecturerAssignment a : list) {
             if (lecturerId.equalsIgnoreCase(safe(a.getLecturerId()))
                     && !leaderId.equalsIgnoreCase(safe(a.getLeaderId()))) {
@@ -93,7 +82,6 @@ public class LeaderLecturerService {
             }
         }
 
-        // Max 3 lecturers per leader
         int count = 0;
         for (LeaderLecturerAssignment a : list) {
             if (leaderId.equalsIgnoreCase(safe(a.getLeaderId()))) count++;
@@ -115,7 +103,6 @@ public class LeaderLecturerService {
         List<LeaderLecturerAssignment> list = getAll();
         int before = list.size();
 
-        // Fix: no lambda removeIf (avoids final/effectively final compile issue)
         Iterator<LeaderLecturerAssignment> it = list.iterator();
         while (it.hasNext()) {
             LeaderLecturerAssignment a = it.next();
@@ -126,23 +113,19 @@ public class LeaderLecturerService {
         }
 
         if (list.size() == before) return false;
-
         return writeAll(list);
     }
 
     private boolean writeAll(List<LeaderLecturerAssignment> list) {
         ensureFileExistsWithHeader();
-
         File f = new File(filePath);
         try (PrintWriter pw = new PrintWriter(new FileWriter(f, false))) {
             pw.println("LeaderID|LecturerID");
-
             for (LeaderLecturerAssignment a : list) {
-                String leaderId = safe(a.getLeaderId());
-                String lecturerId = safe(a.getLecturerId());
-                if (leaderId.isEmpty() || lecturerId.isEmpty()) continue;
-
-                pw.println(leaderId + DELIM + lecturerId);
+                String lId = safe(a.getLeaderId());
+                String tId = safe(a.getLecturerId());
+                if (lId.isEmpty() || tId.isEmpty()) continue;
+                pw.println(lId + DELIM + tId);
             }
             return true;
         } catch (IOException e) {

@@ -3,6 +3,8 @@ package ui;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.plaf.basic.BasicScrollBarUI;
+import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.JTableHeader;
 import java.awt.*;
 
 public class UIUtils {
@@ -90,6 +92,53 @@ public class UIUtils {
         b.setBorder(new EmptyBorder(10, 14, 10, 14));
         b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         return b;
+    }
+
+    public static void applyTableStyle(JTable table) {
+        table.setRowHeight(28);
+        table.setFillsViewportHeight(true);
+        table.setShowVerticalLines(false);
+        table.setShowHorizontalLines(true);
+        table.setFont(font(13, Font.PLAIN));
+        table.setBackground(new Color(18, 22, 30));
+        table.setForeground(Color.WHITE);
+        table.setGridColor(new Color(60, 70, 90));
+        table.setSelectionBackground(new Color(70, 130, 180));
+        table.setSelectionForeground(Color.WHITE);
+
+        JTableHeader header = table.getTableHeader();
+        header.setReorderingAllowed(false);
+        header.setDefaultRenderer(new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(
+                    JTable tbl, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+                JLabel lbl = (JLabel) super.getTableCellRendererComponent(tbl, value, isSelected, hasFocus, row, column);
+                lbl.setOpaque(true);
+                lbl.setBackground(new Color(30, 35, 50));
+                lbl.setForeground(Color.WHITE);
+                lbl.setFont(font(13, Font.BOLD));
+                lbl.setBorder(BorderFactory.createEmptyBorder(6, 8, 6, 8));
+                return lbl;
+            }
+        });
+
+        table.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(
+                    JTable tbl, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+                JLabel lbl = (JLabel) super.getTableCellRendererComponent(tbl, value, isSelected, hasFocus, row, column);
+                lbl.setOpaque(true);
+                lbl.setBorder(BorderFactory.createEmptyBorder(0, 8, 0, 8));
+                if (isSelected) {
+                    lbl.setBackground(new Color(70, 130, 180));
+                    lbl.setForeground(Color.WHITE);
+                } else {
+                    lbl.setBackground(row % 2 == 0 ? new Color(18, 22, 30) : new Color(24, 29, 40));
+                    lbl.setForeground(column == 0 ? new Color(200, 220, 255) : Color.WHITE);
+                }
+                return lbl;
+            }
+        });
     }
 
     public static void styleScrollPane(JScrollPane sp) {
